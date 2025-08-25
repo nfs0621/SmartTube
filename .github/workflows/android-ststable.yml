@@ -14,16 +14,16 @@ jobs:
         with:
           submodules: true
 
-      - name: Set up JDK 11
+      - name: Set up JDK 17 for Android SDK tools
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
+          java-version: '17'
           distribution: 'temurin'
 
       - name: Cache Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Set up Android SDK
+      - name: Set up Android SDK (cmdline-tools requires JDK 17)
         uses: android-actions/setup-android@v3
 
       - name: Accept licenses and install SDK packages
@@ -40,6 +40,12 @@ jobs:
             "platform-tools" \
             "platforms;android-33" \
             "build-tools;30.0.3"
+
+      - name: Switch to JDK 11 for Gradle/AGP 4.x
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
 
       - name: Create local.properties
         run: |

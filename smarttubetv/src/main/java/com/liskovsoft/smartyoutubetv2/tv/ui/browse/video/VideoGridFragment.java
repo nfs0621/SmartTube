@@ -288,7 +288,10 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
         @Override
         public void onItemSelected(Presenter.ViewHolder itemViewHolder, Object item,
                                    RowPresenter.ViewHolder rowViewHolder, Row row) {
+            android.util.Log.d(TAG, "onItemSelected called with item: " + (item != null ? item.getClass().getSimpleName() : "null"));
             if (item instanceof Video) {
+                Video video = (Video) item;
+                android.util.Log.d(TAG, "Video selected: " + video.title + " (ID: " + video.videoId + ")");
                 mBackgroundManager.setBackgroundFrom((Video) item);
 
                 mMainPresenter.onVideoItemSelected((Video) item);

@@ -8,99 +8,127 @@ SmartTube is a free and open-source advanced media player for Android TVs and TV
 
 **Key Features:**
 - No ads, SponsorBlock integration
-- 8K resolution, 60fps, HDR support  
+- 8K resolution, 60fps, HDR support
 - Adjustable playback speed, live chat viewing
 - Customizable buttons, no Google Services required
 - Gemini AI integration for video summaries
 
-**Important:** Only works on Android TV devices - NOT smartphones, tablets, Samsung Tizen, LG webOS, or iOS.
+Important: Only works on Android TV devices — NOT smartphones, tablets, Samsung Tizen, LG webOS, or iOS.
 
 ## Build System & Commands
 
 ### Prerequisites
-- Java JDK 11 (OpenJDK 14 or older required - newer versions cause crashes)
+- Java JDK 11 for the Gradle daemon (newer JDKs can build but may cause runtime issues on device). Pin JDK 11 explicitly:
+  - Unix/macOS: export JAVA_HOME="/path/to/jdk-11"
+  - Windows (PowerShell): $env:JAVA_HOME="C:\\Java\\jdk-11"
+  - Windows (CMD): setx JAVA_HOME "C:\\Java\\jdk-11"
+  - Alternatively set in Gradle: add `org.gradle.java.home=/path/to/jdk-11` to `gradle.properties`.
 - Android SDK with NDK 27.0.12077973
-- Target Android API 33, minimum API 19
+- Compile/Target SDK: defined via project properties (currently targeting SDK 34 in this repo); min SDK 19
 
 ### Core Build Commands
 
-**Always use stable builds and increment version numbers:**
-```bash
-# Build stable debug (recommended for development)
-export JAVA_HOME="/path/to/jdk-11" && ./gradlew assembleStstableDebug -x lint
+Always use stable builds for production and increment version numbers in `smarttubetv/build.gradle`.
 
-# Build stable release (requires signing)
-./gradlew assembleStstableRelease
-
-# Clean build if needed
-./gradlew clean assembleStstableDebug
-```
+- Unix/macOS:
+  - Build stable debug (recommended for development): `./gradlew :smarttubetv:assembleStstableDebug -x lint`
+  - Install stable debug directly: `./gradlew :smarttubetv:installStstableDebug`
+  - Build stable release (requires signing): `./gradlew :smarttubetv:assembleStstableRelease`
+  - Clean + build: `./gradlew clean :smarttubetv:assembleStstableDebug`
+- Windows:
+  - `gradlew.bat :smarttubetv:assembleStstableDebug -x lint`
+  - `gradlew.bat :smarttubetv:installStstableDebug`
+  - `gradlew.bat :smarttubetv:assembleStstableRelease`
 
 ### Build Variants & Application IDs
-- **ststable**: `com.teamsmart.videomanager.tv` (primary stable version)
-- **stbeta**: `com.teamsmart.videomanager.tv` (beta testing)
-- **storig**: `org.smartteam.smarttube.tv.orig` (original variant)
-- **strtarmenia**: `com.google.android.youtube.tv` (Armenia region)
+- ststable: `com.teamsmart.videomanager.tv` (primary stable version)
+- stbeta: `com.teamsmart.videomanager.tv.beta` (applicationIdSuffix ".beta")
+- storig: `org.smartteam.smarttube.tv.orig` (original variant)
+- strtarmenia: `com.google.android.youtube.tv` (Armenia region)
 
-**Important:** Always use `ststable` variant for production. Never use beta for final releases.
+Important: Use the ststable variant for production.
 
 ### Architecture Selection
 APKs are generated for multiple architectures:
-- **armeabi-v7a**: Most Android TVs (32-bit ARM) - most common
-- **arm64-v8a**: Modern Android TVs (64-bit ARM)  
-- **x86**: Intel-based devices/emulators
+- armeabi-v7a: Most Android TVs (32-bit ARM) — most common
+- arm64-v8a: Modern Android TVs (64-bit ARM)
+- x86: Intel-based devices/emulators
+
+Detect device ABI and pick the matching APK:
+```bash
+adb shell getprop ro.product.cpu.abilist  # e.g., "arm64-v8a,armeabi-v7a"
+```
 
 ### Version Management
 Version information is in `smarttubetv/build.gradle`:
 - Always increment `versionCode` and `versionName` for new builds
-- Current pattern: versionCode 2111, versionName "29.21"
+- APKs follow the pattern: `SmartTube_<flavor>_<version>_<abi>.apk` (see `smarttubetv/build/outputs/apk/.../output.json` for the exact names)
 
 ### Deployment
 ```bash
-# Connect to Android TV
-adb connect <TV_IP_ADDRESS>
+# First-time wireless ADB (from a USB-connected session)
+adb tcpip 5555 && adb connect <TV_IP_ADDRESS>:5555
 
-# Install debug APK (pre-signed)
-adb install -r -t "./smarttubetv/build/outputs/apk/ststable/debug/SmartTube_stable_29.21_armeabi-v7a.apk"
+# Install stable debug (Unix/macOS)
+./gradlew :smarttubetv:installStstableDebug
+
+# Or install a specific ABI APK
+adb install -r -t smarttubetv/build/outputs/apk/ststable/debug/SmartTube_stable_<version>_<abi>.apk
 
 # Launch app
 adb shell am start -n com.teamsmart.videomanager.tv/com.liskovsoft.smartyoutubetv2.tv.ui.main.SplashActivity
+
+# Verify it is running
+adb shell ps | grep com.teamsmart.videomanager.tv
 ```
+
+Helper scripts are available in `scripts/`:
+- Unix/macOS: `scripts/deploy_ststable_debug.sh <TV_IP[:PORT]>`
+- Windows CMD: `scripts\deploy_ststable_debug.cmd <TV_IP[:PORT]>`
 
 ## Project Architecture
 
 ### Module Structure
 SmartTube uses a multi-module Android architecture:
 
-- **smarttubetv/**: Main TV application module (UI, activities, fragments)
-- **common/**: Shared business logic, preferences, utilities
-- **MediaServiceCore/**: Git submodule for YouTube API integration
-- **SharedModules/**: Git submodule for shared utilities
-- **exoplayer-amzn-2.10.6/**: Amazon ExoPlayer fork for video playback
+- smarttubetv/: Main TV application module (UI, activities, fragments)
+- common/: Shared business logic, preferences, utilities
+- MediaServiceCore/: Git submodule for YouTube API integration
+- SharedModules/: Git submodule for shared utilities
+- exoplayer-amzn-2.10.6/: Amazon ExoPlayer fork for video playback (library + extensions)
+- Additional local modules observed in builds: `fragment-1.1.0`, `leanback-1.0.0`, `chatkit`, `sharedutils`, `commons-io-2.8.0`, `leanbackassistant`, `mediaserviceinterfaces`, `youtubeapi`.
 
 ### Key Components
 
-**UI Architecture (Android TV Leanback):**
+UI Architecture (Android TV Leanback):
 - `BrowseFragment`: Main video grid interface
 - `VideoGridFragment`: Handles video selection and auto-timer for Gemini summaries
 - `PlaybackFragment`: Video player with custom controls
-- Various presenters handle card layouts and interactions
+- Presenters handle card layouts and interactions
 
-**Data Layer:**
+Data Layer:
 - YouTube API integration via MediaServiceCore submodule
 - ExoPlayer for media playback with custom extensions
 - Preferences managed through `*Data` classes (e.g., `GeminiData`)
 
-**Gemini AI Integration:**
+Gemini AI Integration:
 - `GeminiClient` (common/): Handles AI summary generation with transcript fetching
 - `VideoSummaryOverlay` (smarttubetv/): Displays AI summaries with navigation
 - `VideoMenuPresenter`: Context menu integration
 - `GeminiSettingsPresenter`: Configuration UI
 
 ### Configuration Files
-- `local.properties`: SDK/NDK paths (not in git)
-- `gradle.properties`: Build configuration, memory settings
-- `assets/gemini.properties`: API keys (not in git)
+- `local.properties`: SDK/NDK paths (not in git). Example:
+  ```
+  sdk.dir=/path/to/Android/Sdk
+  ndk.dir=/path/to/Android/Sdk/ndk/27.0.12077973
+  ```
+- `gradle.properties`: Build configuration, memory settings. Consider pinning JDK:
+  ```
+  org.gradle.java.home=/path/to/jdk-11
+  org.gradle.jvmargs=-Xmx2g
+  ```
+- `smarttubetv/src/main/assets/gemini.properties`: API keys (not in git). See `gemini.properties.example`.
 - `BUILD_AND_DEPLOY.md`: Detailed build/deploy instructions
 
 ### Flavor-Specific Resources
@@ -112,7 +140,7 @@ Variants have separate resource folders:
 ## Gemini AI Features
 
 ### Manual Gemini Summary
-- Accessible via long-press context menu � "Gemini Summary"
+- Accessible via long-press context menu → "Gemini Summary"
 - Located at top of context menu (see `MainUIData.MENU_ITEM_DEFAULT_ORDER`)
 - Requires API key in `assets/gemini.properties`
 - Shows source identification: `[Detail Level: X] [Source: Y]`
@@ -124,10 +152,10 @@ Variants have separate resource folders:
 - Common issues: rapid navigation, lifecycle events, missing API key
 
 ### Implementation Details
-- **Transcript Fetching**: Official captions � auto-generated fallback
-- **Detail Levels**: Concise/Moderate/Detailed configurable
-- **UI Navigation**: D-pad left/right/back closes summary overlay
-- **Error Handling**: Graceful fallback to title/metadata if transcript unavailable
+- Transcript Fetching: Official captions → auto-generated fallback
+- Detail Levels: Concise/Moderate/Detailed configurable
+- UI Navigation: D‑pad left/right/back closes summary overlay
+- Error Handling: Graceful fallback to title/metadata if transcript unavailable
 
 ## Development Workflow
 
@@ -141,10 +169,25 @@ adb logcat | grep -i "smarttube\|gemini\|summary"
 ```
 
 ### Common Issues
-- **NDK Version**: Update `local.properties` to match available NDK
-- **Memory**: Increase paging file if builds fail
-- **Certificate**: Use debug builds for development, sign release builds
-- **Gemini Timer**: Check settings enabled, API key configured, debug logs
+- Wrong JDK: Ensure Gradle uses JDK 11 (set `JAVA_HOME` or `org.gradle.java.home`).
+- NDK Version: Update `local.properties` to match available NDK (27.0.12077973).
+- Memory: Increase Gradle heap via `org.gradle.jvmargs` or system paging file if builds fail.
+- Certificate: Use debug builds for development; sign release builds with your keystore.
+- Gemini Timer: Check settings enabled, API key configured, debug logs.
+
+### Release Signing
+Configure your keystore and run a release build:
+```properties
+# gradle.properties (do not commit secrets)
+RELEASE_STORE_FILE=/abs/path/to/keystore.jks
+RELEASE_STORE_PASSWORD=****
+RELEASE_KEY_ALIAS=smarttube
+RELEASE_KEY_PASSWORD=****
+```
+Then wire these into `signingConfigs` in `smarttubetv/build.gradle` and run:
+```bash
+./gradlew :smarttubetv:assembleStstableRelease
+```
 
 ### Code Style
 - No comments unless specifically requested
@@ -154,9 +197,10 @@ adb logcat | grep -i "smarttube\|gemini\|summary"
 
 ## Important Notes
 
-- **Security**: Never include API keys, secrets, or sensitive data in commits
-- **Compatibility**: Target Android TV devices only - no phone/tablet support
-- **Build Requirements**: JDK 11 is critical - newer versions cause runtime crashes
-- **Git Submodules**: Run `git submodule update --init` after cloning
-- **Version Control**: Always increment version numbers for new builds
-- **APK Distribution**: Only distribute through official channels, never app stores
+- Security: Never include API keys, secrets, or sensitive data in commits.
+- Compatibility: Android TV devices only — no phone/tablet/webOS/Tizen/iOS support.
+- Build Requirements: Prefer JDK 11 for Gradle daemon.
+- Git Submodules: Run `git submodule update --init --recursive` after cloning.
+- Version Control: Always increment version numbers for new builds.
+- APK Distribution: Only distribute through official channels, never app stores.
+

@@ -303,9 +303,15 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
         if (mSummaryRunnable != null) {
             mSummaryHandler.removeCallbacks(mSummaryRunnable);
         }
+        // Check settings
+        com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
+        if (!gd.isEnabled()) {
+            return;
+        }
+        int delay = gd.getDelayMs();
         mPendingSummaryVideo = video;
         mSummaryRunnable = () -> triggerSummary(mPendingSummaryVideo);
-        mSummaryHandler.postDelayed(mSummaryRunnable, 5000);
+        mSummaryHandler.postDelayed(mSummaryRunnable, Math.max(1000, delay));
     }
 
     private void triggerSummary(Video video) {

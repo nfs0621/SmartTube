@@ -1,0 +1,307 @@
+--------- beginning of main
+08-24 22:30:55.002 26866 24812 I cast_shell: [0824/223055.002027:INFO:ssdp_device.c(101)] SSDP packets sent for 305 seconds = 3
+08-24 22:30:55.159 31753 31753 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+08-24 22:30:55.168 31753 31753 I AndroidRuntime: Using default boot image
+08-24 22:30:55.168 31753 31753 I AndroidRuntime: Leaving lock profiling enabled
+08-24 22:30:55.168 31753 31753 W libc    : Access denied finding property "odsign.verification.success"
+08-24 22:30:55.175 31753 31753 W app_process: ART APEX data files are untrusted.
+08-24 22:30:55.329 31753 31753 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+08-24 22:30:55.329 31753 31753 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+08-24 22:30:55.342 31753 31753 W app_process: Using default instruction set features for ARM CPU variant (cortex-a9) using conservative defaults
+08-24 22:30:55.386 31753 31753 D ProcessState: Binder ioctl to enable oneway spam detection failed: Invalid argument
+08-24 22:30:55.386 31753 31753 D AndroidRuntime: Calling main entry com.android.commands.monkey.Monkey
+08-24 22:30:55.388 31753 31753 W Monkey  : args: [-p, com.teamsmart.videomanager.tv, -c, android.intent.category.LAUNCHER, 1]
+08-24 22:30:55.389 31753 31753 W Monkey  :  arg: "-p"
+08-24 22:30:55.389 31753 31753 W Monkey  :  arg: "com.teamsmart.videomanager.tv"
+08-24 22:30:55.389 31753 31753 W Monkey  :  arg: "-c"
+08-24 22:30:55.389 31753 31753 W Monkey  :  arg: "android.intent.category.LAUNCHER"
+08-24 22:30:55.389 31753 31753 W Monkey  :  arg: "1"
+08-24 22:30:55.389 31753 31753 W Monkey  : data="com.teamsmart.videomanager.tv"
+08-24 22:30:55.389 31753 31753 W Monkey  : data="android.intent.category.LAUNCHER"
+--------- beginning of system
+08-24 22:30:55.422  3429  3491 W BroadcastQueue: Skipping deliver [background] BroadcastRecord{d4cb958 u-1 android.net.conn.CONNECTIVITY_CHANGE} to ReceiverList{c33eab1 31753 (unknown name)/2000/u-1 remote:b3aecca}: process gone or crashing
+08-24 22:30:55.436  3429  5800 I ActivityTaskManager: START u0 {act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.teamsmart.videomanager.tv/com.liskovsoft.smartyoutubetv2.tv.ui.main.SplashActivity} from uid 2000
+08-24 22:30:55.437  3429  5800 W ActivityTaskManager: Can't find TaskDisplayArea to determine support for multi window. Task id=10582 attached=false
+08-24 22:30:55.441  2825  2825 D mediatek.hardware.power-service: Power setMode : Mode Type = 5 enable = 1
+08-24 22:30:55.442  3429  5800 D CompatibilityChangeReporter: Compat change id reported: 168419799; UID 10264; state: DISABLED
+08-24 22:30:55.442  3429  5800 I ActivityTaskManager: *********** COMPAT FOR PKG com.teamsmart.videomanager.tv: {320dpi always-compat}
+08-24 22:30:55.443  3429  5800 I ActivityTaskManager: *********** COMPAT FOR PKG com.teamsmart.videomanager.tv: {320dpi always-compat}
+08-24 22:30:55.446 31753 31753 I Monkey  : Events injected: 1
+08-24 22:30:55.450  5154  5154 D FirebaseSessions: App backgrounded on com.spocky.projengmenu
+08-24 22:30:55.451  3429  3730 D EthernetNetworkFactory: eth0: onNetworkUnneeded for request: NetworkRequest [ REQUEST id=1199, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10187 RequestorUid: 10187 RequestorPkg: com.spocky.projengmenu] ]
+08-24 22:30:55.462  3429  3468 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10264; state: DISABLED
+08-24 22:30:55.462  3429  3492 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10264; state: DISABLED
+08-24 22:30:55.463 31753 31753 I Monkey  : ## Network stats: elapsed time=20ms (0ms mobile, 0ms wifi, 20ms not connected)
+08-24 22:30:55.464 31753 31753 I app_process: System.exit called, status: 0
+08-24 22:30:55.465 31753 31753 I AndroidRuntime: VM exiting with result code 0.
+08-24 22:30:55.482  2754  2754 D Zygote  : Forked child process 31769
+08-24 22:30:55.482  3429  3492 I ActivityManager: Start proc 31769:com.teamsmart.videomanager.tv/u0a264 for pre-top-activity {com.teamsmart.videomanager.tv/com.liskovsoft.smartyoutubetv2.tv.ui.main.SplashActivity}
+08-24 22:30:55.496 31769 31769 W videomanager.t: Using default instruction set features for ARM CPU variant (cortex-a9) using conservative defaults
+08-24 22:30:55.500 31769 31769 E videomanager.t: Not starting debugger since process cannot load the jdwp agent.
+08-24 22:30:55.502 31769 31769 D ProcessState: Binder ioctl to enable oneway spam detection failed: Invalid argument
+08-24 22:30:55.510  3429  6454 I ActivityTaskManager: *********** COMPAT FOR PKG com.teamsmart.videomanager.tv: {320dpi always-compat}
+08-24 22:30:55.516 31769 31769 I ActivityThread: Relaunch all activities: onCoreSettingsChange
+08-24 22:30:55.517 31769 31769 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10264; state: DISABLED
+08-24 22:30:55.522  4164 10960 I SonySystemService: PictureModeController: ApplicationMonitor.onForegroundActivitiesChanged: packageName=com.teamsmart.videomanager.tv
+08-24 22:30:55.522  3769  4658 I SimpleRc: onForegroundActivitiesChanged pkgName=com.teamsmart.videomanager.tv
+08-24 22:30:55.523 25195 31637 I NetworkScheduler: (REDACTED) Error inserting %s
+08-24 22:30:55.523  4164 10960 I SonySystemService: isTranslucentOrStopped: false
+08-24 22:30:55.523  4164 10960 I SonySystemService: PictureModeController onActivityChanged: packageName=com.teamsmart.videomanager.tv, isTranslucent=false
+08-24 22:30:55.523  3429  3449 I AlarmManager: Change Wakeup Alarm type to non Wakeup type, current type=[3] packageName = com.google.android.gmsstatsTag = *alarm*:com.google.android.gms.gcm.ACTION_CHECK_QUEUE @122184561 and next wakeup alarm is @Mon Aug 25 00:03:41 MDT 2025
+08-24 22:30:55.524  5116 29745 D TV_MtkTvConfig: Enter setConfigValue, inputGroup=-1, cfgId=g_misc__netflix_running_status, value=0, isUpdate=3
+08-24 22:30:55.524  5116 29745 D MtkTvConfig_jni: MtkTvConfig Java_com_mediatek_twoworlds_tv_TVNative_setConfigValue_1native
+08-24 22:30:55.524  5116 29745 D hw_mtktvapi_config(client): <a_mtktvapi_config_set_value:73> a_mtktvapi_config_set_value
+08-24 22:30:55.525  2838  3669 D MtkTvApiConfig(service): <a_hidl_a_mtktvapi_config_set_value:79> [Return ]ARG=[g_misc__netflix_running_status]
+08-24 22:30:55.525  2838  3669 D MtkTvApiConfig(service): <a_hidl_a_mtktvapi_config_set_value:81> [Return ]ARG=[0]
+08-24 22:30:55.525  5116 29745 D hw_mtktvapi_config(client): <a_mtktvapi_config_set_value:81> a_mtktvapi_config_set_value  i4_value=0, i4_ret=0
+08-24 22:30:55.525  5116 29745 D MtkTvConfig_jni: setConfigValue_native inputGroup = -1,s_cfgid = g_misc__netflix_running_status,value = 0 ,isUpdate = 3
+08-24 22:30:55.525  5116 29745 D TV_MtkTvConfig: Leave setConfigValue, return value = 0
+08-24 22:30:55.526  5116 29745 D MtkTvSonyCustom_jni: id:15, value:0
+08-24 22:30:55.526  5116 29745 D MtkTvSonyCustom_jni: enter4kScaling param1= 0
+08-24 22:30:55.526  5116 29745 D (hw_mtal)(client): <MTDRVCUST_dcustom_cust_spec_set:424> ####  call MTDRVCUST_dcustom_cust_spec_set
+08-24 22:30:55.526  2838  3669 D MtkTvApi(service): <a_hidl_MTDRVCUST_dcustom_cust_spec_set:1457> enter a_hidl_MTDRVCUST_dcustom_cust_spec_set(131075,0)
+08-24 22:30:55.526  2838  3669 D MtkTvApi(service): <a_hidl_MTDRVCUST_dcustom_cust_spec_set:1459> exit a_hidl_MTDRVCUST_dcustom_cust_spec_set,return 0
+08-24 22:30:55.526  5116 29745 D (hw_mtal)(client): <MTDRVCUST_dcustom_cust_spec_set:427> ####  mt_ret=0 #### 
+08-24 22:30:55.526  5116 29745 D D_INTERFACE: jni_d_interface_set_enter_4k_scaling, ui1_value=0,i4_ret =0
+08-24 22:30:55.526  5116 29745 D MtkTvSonyCustom_jni: jni_d_interface_set_enter_4k_scaling ret= 0  
+08-24 22:30:55.526  5116 29745 D MtkTvSony: enter4kScaling false ret = 0
+08-24 22:30:55.528 31769 31769 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+08-24 22:30:55.531  3429  6454 I ActivityTaskManager: *********** COMPAT FOR PKG com.sony.dtv.gestureapp: {320dpi always-compat}
+08-24 22:30:55.533 31769 31769 D nativeloader: Configuring classloader-namespace for other apk /system/framework/org.apache.http.legacy.jar. target_sdk_version=26, uses_libraries=ALL, library_path=/data/app/~~OW6suvRxLq3MHg-oyS5nDA==/com.teamsmart.videomanager.tv-IpucwLn3BDeGNu3bGlip9w==/lib/arm:/data/app/~~OW6suvRxLq3MHg-oyS5nDA==/com.teamsmart.videomanager.tv-IpucwLn3BDeGNu3bGlip9w==/base.apk!/lib/armeabi-v7a, permitted_path=/data:/mnt/expand:/data/user/0/com.teamsmart.videomanager.tv
+08-24 22:30:55.533 31769 31769 D nativeloader: Extending system_exposed_libraries: libmtkbitmapfactory.mediatek.so:libpicapi.mediatek.so
+08-24 22:30:55.535 28051 28132 E NodeJS-Engine: Proxy request error: Proxy request timed out
+08-24 22:30:55.551  3429  3449 I ActivityTaskManager: *********** COMPAT FOR PKG com.sony.dtv.seeds.iot: {320dpi always-compat}
+08-24 22:30:55.555  9936 26593 I InternalTraitProviderService$c: onCreateAttribute: availableApplications
+08-24 22:30:55.555  9936  9936 I g       : onCreateTrait: com.sony.dtv.devicecontrolservice.trait.APPLICATION
+08-24 22:30:55.556  9936 26593 I InternalTraitProviderService$c: onCreateAttribute: isDeeplinkSupported
+08-24 22:30:55.556  9936 26593 I InternalTraitProviderService$c: onCreateAttribute: applicationInfo
+08-24 22:30:55.556  9936 26593 I InternalTraitProviderService$d: onCreateCommand: launchApplication
+08-24 22:30:55.557  9936 26593 I p       : onCreateParameter: launchApplication: packageName
+08-24 22:30:55.557  9936 26593 I InternalTraitProviderService$f: onCreateState: currentApplication
+08-24 22:30:55.558 29123 29335 I V2TraitNotifyService: [ANALYSIS] [REQ][WHAT: onStateValueChanged(com.sony.dtv.devicecontrolservice.trait.APPLICATION, currentApplication)]
+08-24 22:30:55.558  3769  3769 D TvPipController: onTaskStackChanged()
+08-24 22:30:55.561 29123 30729 I ApplicationTraitRepositoryImpl: [ANALYSIS] [REQ][WHERE: getCurrentApplication][WHAT: valueAsString]
+08-24 22:30:55.562  4164 11316 I SonySystemService: PictureModeController: ApplicationMonitor.onTaskStackChanged: packageName=com.teamsmart.videomanager.tv
+08-24 22:30:55.565  4164 11316 I SonySystemService: isTranslucentOrStopped: false
+08-24 22:30:55.565  4164 11316 I SonySystemService: PictureModeController onActivityChanged: packageName=com.teamsmart.videomanager.tv, isTranslucent=false
+08-24 22:30:55.571  9936 26428 I p       : onQueryStates: currentApplication
+08-24 22:30:55.574 29123 30729 I ApplicationTraitRepositoryImpl: [ANALYSIS] [RES][WHERE: getCurrentApplication][WHAT: valueAsString][RESULT: com.teamsmart.videomanager.tv]
+08-24 22:30:55.575  9936 26593 I p       : onIsTraitAvailable
+08-24 22:30:55.581  9936 26593 I p       : onQueryStates: currentApplication
+08-24 22:30:55.734 12656 12706 I System.out: SQL Query: SELECT * FROM trigger_actions WHERE is_enabled = 1 SQL Args: []
+08-24 22:30:55.735 12656 12706 I System.out: SQL Query: SELECT * FROM trigger_actions WHERE is_enabled = 1 SQL Args: []
+08-24 22:30:55.898  2980 31752 W adbd    : timed out while waiting for FUNCTIONFS_BIND, trying again
+08-24 22:30:55.898  2980 31752 I adbd    : UsbFfs: connection terminated: monitor thread finished
+08-24 22:30:55.899  2980  2980 I adbd    : UsbFfs: already offline
+08-24 22:30:55.899  2980  2980 I adbd    : destroying transport UsbFfs
+08-24 22:30:55.899  2980  2980 I adbd    : UsbFfsConnection being destroyed
+08-24 22:30:55.935  2980  2999 I adbd    : opening control endpoint /dev/usb-ffs/adb/ep0
+08-24 22:30:55.937  2980  2999 I adbd    : UsbFfsConnection constructed
+08-24 22:30:55.938  2980 31785 I adbd    : UsbFfs-monitor thread spawned
+08-24 22:30:56.149 31769 31769 D nativeloader: Configuring classloader-namespace for other apk /data/app/~~OW6suvRxLq3MHg-oyS5nDA==/com.teamsmart.videomanager.tv-IpucwLn3BDeGNu3bGlip9w==/base.apk. target_sdk_version=26, uses_libraries=, library_path=/data/app/~~OW6suvRxLq3MHg-oyS5nDA==/com.teamsmart.videomanager.tv-IpucwLn3BDeGNu3bGlip9w==/lib/arm:/data/app/~~OW6suvRxLq3MHg-oyS5nDA==/com.teamsmart.videomanager.tv-IpucwLn3BDeGNu3bGlip9w==/base.apk!/lib/armeabi-v7a, permitted_path=/data:/mnt/expand:/data/user/0/com.teamsmart.videomanager.tv
+08-24 22:30:56.149 31769 31769 D nativeloader: Extending system_exposed_libraries: libmtkbitmapfactory.mediatek.so:libpicapi.mediatek.so
+08-24 22:30:56.156 31769 31769 V GraphicsEnvironment: ANGLE Developer option for 'com.teamsmart.videomanager.tv' set to: 'default'
+08-24 22:30:56.157 31769 31769 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+08-24 22:30:56.158 31769 31769 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+08-24 22:30:56.158 31769 31769 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+08-24 22:30:56.169 31769 31769 I MultiDex: VM with version 2.1.0 has multidex support
+08-24 22:30:56.169 31769 31769 I MultiDex: Installing application
+08-24 22:30:56.169 31769 31769 I MultiDex: VM has multidex support, MultiDex support library is disabled.
+08-24 22:30:56.173 31769 31769 D VideoContentProvider: Authority found: com.liskovsoft.leanbackassistant.ststable
+08-24 22:30:56.177 31769 31769 D WM-WrkMgrInitializer: Initializing WorkManager with default configuration.
+08-24 22:30:56.261 31769 31769 D WM-PackageManagerHelper: Skipping component enablement for androidx.work.impl.background.systemjob.SystemJobService
+08-24 22:30:56.261 31769 31769 D WM-Schedulers: Created SystemJobScheduler and enabled SystemJobService
+08-24 22:30:56.332 31769 31787 D CompatibilityChangeReporter: Compat change id reported: 160794467; UID 10264; state: DISABLED
+08-24 22:30:56.353 31769 31769 D MotherActivity: Starting SplashActivity...
+08-24 22:30:56.374 31769 31769 D YouTubeServiceManager: Starting...
+08-24 22:30:56.382 31769 31769 D YouTubeContentService: Starting...
+08-24 22:30:56.385 31769 31796 D YouTubeSignInService: Updating authorization header...
+08-24 22:30:56.385 31769 31796 E YouTubeSignInService: Access token is null!
+08-24 22:30:56.385 31769 31796 D YouTubeSignInService: Updating authorization header...
+08-24 22:30:56.385 31769 31796 E YouTubeSignInService: Access token is null!
+08-24 22:30:56.465 31769 31769 E videomanager.t: Invalid ID 0x00000000.
+08-24 22:30:56.473 31769 31769 D ScreensaverManager: Enable screensaver
+08-24 22:30:56.473 31769 31769 D ScreensaverManager: Disable screensaver
+08-24 22:30:56.481 31769 31769 D SplashPresenter: initGlobalData called...
+08-24 22:30:56.485 31769 31769 D ViewManager: Launching default activity: BrowseActivity
+08-24 22:30:56.485 31769 31769 D ViewManager: Launching activity: BrowseActivity
+08-24 22:30:56.531 31769 31769 W System.err: SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+08-24 22:30:56.531 31769 31769 W System.err: SLF4J: Defaulting to no-operation (NOP) logger implementation
+08-24 22:30:56.531 31769 31769 W System.err: SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+08-24 22:30:56.561  3429  6454 I ActivityTaskManager: START u0 {flg=0x10000000 cmp=com.teamsmart.videomanager.tv/com.liskovsoft.smartyoutubetv2.tv.ui.browse.BrowseActivity} from uid 10264
+08-24 22:30:56.562  3429  6454 W ActivityTaskManager: Can't find TaskDisplayArea to determine support for multi window. Task id=10583 attached=false
+08-24 22:30:56.565  2825  2825 D mediatek.hardware.power-service: Power setMode : Mode Type = 5 enable = 1
+08-24 22:30:56.566  3429  6454 I ActivityTaskManager: *********** COMPAT FOR PKG com.teamsmart.videomanager.tv: {320dpi always-compat}
+08-24 22:30:56.566  3429  6454 I ActivityTaskManager: *********** COMPAT FOR PKG com.teamsmart.videomanager.tv: {320dpi always-compat}
+08-24 22:30:56.567  3429  6454 I ActivityTaskManager: Add Task{7d7c4ce #10582 type=standard A=10264:com.teamsmart.videomanager.tv U=0 visible=true mode=fullscreen translucent=false sz=1} to hidden list because adding Task{a29bfef #10583 type=standard A=10264:com.teamsmart.videomanager.tv U=0 visible=true mode=fullscreen translucent=true sz=1}
+08-24 22:30:56.573 31769 31769 D ScreensaverManager: Stopping auto hide ui timer...
+08-24 22:30:56.578  3429  4876 W ActivityTaskManager: Tried to set launchTime (0) < mLastActivityLaunchTime (121538557)
+08-24 22:30:56.588 31769 31769 D MotherActivity: Starting BrowseActivity...
+08-24 22:30:56.593 31769 31769 D ScreensaverManager: Enable screensaver
+08-24 22:30:56.593 31769 31769 D ScreensaverManager: Disable screensaver
+08-24 22:30:56.682  3769  3769 D TvPipController: onTaskStackChanged()
+08-24 22:30:56.684  4164 10960 I SonySystemService: PictureModeController: ApplicationMonitor.onTaskStackChanged: packageName=com.teamsmart.videomanager.tv
+08-24 22:30:56.687  4164 10960 I SonySystemService: isTranslucentOrStopped: false
+08-24 22:30:56.687  4164 10960 I SonySystemService: PictureModeController onActivityChanged: packageName=com.teamsmart.videomanager.tv, isTranslucent=false
+08-24 22:30:56.877 31769 31769 D ScreensaverManager: Enable screensaver
+08-24 22:30:56.877 31769 31769 D ScreensaverManager: Disable screensaver
+08-24 22:30:56.886  3429  6454 W WindowManager: Failed looking up window session=Session{afc6c0b 31769:u0a10264} callers=com.android.server.wm.WindowManagerService.windowForClientLocked:5603 com.android.server.wm.Session.insetsModified:629 android.view.IWindowSession$Stub.onTransact:1151 
+08-24 22:30:56.895 31769 31769 D ScreensaverManager: Stopping auto hide ui timer...
+08-24 22:30:56.895 31769 31769 D ScreensaverManager: Disable screensaver
+08-24 22:30:56.895  3429  6454 D ActivityTaskManager: notifyActivityPipModeChanged currentMode==1
+08-24 22:30:56.904 31769 31788 W libc    : Access denied finding property "vendor.mali.config"
+08-24 22:30:56.909 31769 31788 D hw-ProcessState: Binder ioctl to enable oneway spam detection failed: Invalid argument
+08-24 22:30:56.913 31769 31788 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+08-24 22:30:56.926  2782  9025 D gralloc4: mali_gralloc_select_format: req_format=0x00000001, usage=0x40000000000b00, req_base_format=0x1, alloc_format=0x30d00000001, internal_format=0x30d00000001
+08-24 22:30:56.928  2782  9025 D gralloc4: ION_IOC_CUSTOM
+08-24 22:30:56.930  2782  9025 D gralloc4: mali_gralloc_ion_allocate:a: hnd->shared_fd=8, hnd->iova=0x75000000, cpu_ptr=0xeb367000, size=0x818000 internal_format=0x30d00000001
+08-24 22:30:56.931  2782  9025 D gralloc4: mali_gralloc_select_format: req_format=0x00000001, usage=0x40000000000b00, req_base_format=0x1, alloc_format=0x30d00000001, internal_format=0x30d00000001
+08-24 22:30:56.935  2782  9025 D gralloc4: ION_IOC_CUSTOM
+08-24 22:30:56.938  2782  9025 D gralloc4: mali_gralloc_ion_allocate:a: hnd->shared_fd=8, hnd->iova=0x74000000, cpu_ptr=0xeb367000, size=0x818000 internal_format=0x30d00000001
+08-24 22:30:56.939  2782  9025 D gralloc4: mali_gralloc_select_format: req_format=0x00000001, usage=0x40000000000b00, req_base_format=0x1, alloc_format=0x30d00000001, internal_format=0x30d00000001
+08-24 22:30:56.939  2980 31785 W adbd    : timed out while waiting for FUNCTIONFS_BIND, trying again
+08-24 22:30:56.939  2980 31785 I adbd    : UsbFfs: connection terminated: monitor thread finished
+08-24 22:30:56.939  2980  2980 I adbd    : UsbFfs: already offline
+08-24 22:30:56.939  2980  2980 I adbd    : destroying transport UsbFfs
+08-24 22:30:56.939  2980  2980 I adbd    : UsbFfsConnection being destroyed
+08-24 22:30:56.946  2782  9025 D gralloc4: ION_IOC_CUSTOM
+08-24 22:30:56.948  2782  9025 D gralloc4: mali_gralloc_ion_allocate:a: hnd->shared_fd=8, hnd->iova=0x73000000, cpu_ptr=0xeb367000, size=0x818000 internal_format=0x30d00000001
+08-24 22:30:56.980  2980  2999 I adbd    : opening control endpoint /dev/usb-ffs/adb/ep0
+08-24 22:30:56.981  2980  2999 I adbd    : UsbFfsConnection constructed
+08-24 22:30:56.983  2980 31810 I adbd    : UsbFfs-monitor thread spawned
+08-24 22:30:56.988 31769 31788 D hw-ProcessState: Binder ioctl to enable oneway spam detection failed: Invalid argument
+08-24 22:30:57.087  2844  4475 D gralloc4: mali_gralloc_select_format: req_format=0x00000001, usage=0x40000000000b00, req_base_format=0x1, alloc_format=0x30d00000001, internal_format=0x30d00000001
+08-24 22:30:57.088  2844  2913 E GPUAUX  : anb=0xf01ca1a8 Src_handle=0xf08c4150, hnd->fbmId=0x0
+08-24 22:30:57.088  2844  2913 D GPUAUX  : mali_gralloc_allocate(): handle=0xf08c4150, flags=4, usage=0x40000000000b00, w=1920, h=1080, stride=1920, size=8486912, byte_stride=7680, format=0x1, offset=0, share_fd=225 fbmId=0, fbChId=0x0 hnd->iova=0x73000000
+08-24 22:30:57.092 31769 31769 D ScreensaverManager: Stopping auto hide ui timer...
+08-24 22:30:57.096  3429  3465 I ActivityTaskManager: Displayed com.teamsmart.videomanager.tv/com.liskovsoft.smartyoutubetv2.tv.ui.browse.BrowseActivity: +1s658ms
+08-24 22:30:57.105 31769 31769 D BrowseSectionFragmentFactory: Creating PageRow fragment
+08-24 22:30:57.116 31769 31769 D TickleManager: Updating tickle in 2885 ms...
+08-24 22:30:57.123  3429  3730 D EthernetNetworkFactory: eth0: onNetworkUnneeded for request: NetworkRequest [ REQUEST id=1197, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10187 RequestorUid: 10187 RequestorPkg: com.spocky.projengmenu] ]
+08-24 22:30:57.138  2844  4475 D gralloc4: mali_gralloc_select_format: req_format=0x00000001, usage=0x40000000000b00, req_base_format=0x1, alloc_format=0x30d00000001, internal_format=0x30d00000001
+08-24 22:30:57.153  3769  4843 I SimpleRc: onForegroundActivitiesChanged pkgName=com.teamsmart.videomanager.tv
+08-24 22:30:57.155  2844  2913 E GPUAUX  : anb=0xf01c0858 Src_handle=0xf08c6f70, hnd->fbmId=0x0
+08-24 22:30:57.155  2844  2913 D GPUAUX  : mali_gralloc_allocate(): handle=0xf08c6f70, flags=4, usage=0x40000000000b00, w=1920, h=1080, stride=1920, size=8486912, byte_stride=7680, format=0x1, offset=0, share_fd=74 fbmId=0, fbChId=0x0 hnd->iova=0x74000000
+08-24 22:30:57.162  4506  4506 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2097 
+08-24 22:30:57.164  2844  4475 D gralloc4: mali_gralloc_select_format: req_format=0x00000001, usage=0x40000000000b00, req_base_format=0x1, alloc_format=0x30d00000001, internal_format=0x30d00000001
+08-24 22:30:57.166  2825  2825 D mediatek.hardware.power-service: Power setMode : Mode Type = 5 enable = 0
+08-24 22:30:57.166  4506  4506 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 0, locked = false
+08-24 22:30:57.166  4506  4506 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1357 onStartInput(EditorInfo{EditorInfo{packageName=com.teamsmart.videomanager.tv, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+08-24 22:30:57.168  4506  4506 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 1, locked = false
+08-24 22:30:57.172  2844  2913 E GPUAUX  : anb=0xf01c7ff8 Src_handle=0xf08cb410, hnd->fbmId=0x0
+08-24 22:30:57.172  2844  2913 D GPUAUX  : mali_gralloc_allocate(): handle=0xf08cb410, flags=4, usage=0x40000000000b00, w=1920, h=1080, stride=1920, size=8486912, byte_stride=7680, format=0x1, offset=0, share_fd=67 fbmId=0, fbChId=0x0 hnd->iova=0x75000000
+08-24 22:30:57.217 31769 31769 D BrowsePresenter: Update section Trending
+08-24 22:30:57.217 31769 31769 D BrowsePresenter: loadRowsHeader: Start loading section: Trending
+08-24 22:30:57.217 31769 31769 D BrowsePresenter: updateRowsHeader: Start loading section: Trending
+08-24 22:30:57.230 31769 31818 D YouTubeSignInService: Updating authorization header...
+08-24 22:30:57.230 31769 31818 E YouTubeSignInService: Access token is null!
+08-24 22:30:57.230 31769 31818 D YouTubeSignInService: Updating authorization header...
+08-24 22:30:57.230 31769 31818 E YouTubeSignInService: Access token is null!
+08-24 22:30:57.245  4506  4506 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2097 
+08-24 22:30:57.248  4506  4506 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 0, locked = false
+08-24 22:30:57.249  4506  4506 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1357 onStartInput(EditorInfo{EditorInfo{packageName=com.teamsmart.videomanager.tv, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+08-24 22:30:57.250  4506  4506 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 1, locked = false
+08-24 22:30:57.262 31769 31818 D AppServiceIntCached: updateAppInfoData
+08-24 22:30:57.490  5154 30109 I FA      : Application backgrounded at: timestamp_millis: 1756096255489
+08-24 22:30:57.644 31769 31769 I videomanager.t: System.exit called, status: 0
+08-24 22:30:57.644 31769 31769 I AndroidRuntime: VM exiting with result code 0, cleanup skipped.
+08-24 22:30:57.674  3429  3429 V HotPlugDetectionAction: Poll all devices.
+08-24 22:30:57.706  2754  2754 I Zygote  : Process 31769 exited cleanly (0)
+08-24 22:30:57.707  3429  4906 I ActivityManager: Process com.teamsmart.videomanager.tv (pid 31769) has died: fg  TOP 
+08-24 22:30:57.707  3429  5284 I WindowManager: WIN DEATH: Window{c339fa6 u0 com.teamsmart.videomanager.tv/com.liskovsoft.smartyoutubetv2.tv.ui.browse.BrowseActivity}
+08-24 22:30:57.708  3429  5284 W InputManager-JNI: Input channel object 'c339fa6 com.teamsmart.videomanager.tv/com.liskovsoft.smartyoutubetv2.tv.ui.browse.BrowseActivity (client)' was disposed without first being removed with the input manager!
+08-24 22:30:57.708  3429  3496 I libprocessgroup: Successfully killed process cgroup uid 10264 pid 31769 in 0ms
+08-24 22:30:57.715  3429  4906 W ActivityTaskManager: Force removing ActivityRecord{31f65c9 u0 com.teamsmart.videomanager.tv/com.liskovsoft.smartyoutubetv2.tv.ui.browse.BrowseActivity t10583}: app died, no saved state
+08-24 22:30:57.717  3429  4906 D ActivityTaskManager: notifyActivityPipModeChanged currentMode==1
+08-24 22:30:57.724  3429  4906 W ActivityTaskManager: Can't find TaskDisplayArea to determine support for multi window. Task id=10583 attached=false
+08-24 22:30:57.724  2844  2844 E BpTransactionCompletedListener: Failed to transact (-32)
+08-24 22:30:57.725  2785  2785 E hwcomposer: setReleaseFences layer size:0 layerdata size:1
+08-24 22:30:57.733  3769  4843 I SimpleRc: onForegroundActivitiesChanged pkgName=com.spocky.projengmenu
+08-24 22:30:57.735  3429  3468 W ActivityManager: setHasOverlayUi called on unknown pid: 31769
+08-24 22:30:57.735  3429  6454 D ConnectivityService: requestNetwork for uid/pid:10187/5154 activeRequest: null callbackRequest: 1200 [NetworkRequest [ REQUEST id=1201, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10187 RequestorUid: 10187 RequestorPkg: com.spocky.projengmenu] ]] callback flags: 0 priority: 2147483647
+08-24 22:30:57.738  3429  3684 D ConnectivityService: NetReassign [1201 : null → 114]
+08-24 22:30:57.738  4164 23587 I SonySystemService: PictureModeController: ApplicationMonitor.onForegroundActivitiesChanged: packageName=com.spocky.projengmenu
+08-24 22:30:57.740  2785  2785 E hwcomposer: setReleaseFences layer size:0 layerdata size:1
+08-24 22:30:57.741  4164 23587 I SonySystemService: isTranslucentOrStopped: false
+08-24 22:30:57.741  4164 23587 I SonySystemService: PictureModeController onActivityChanged: packageName=com.spocky.projengmenu, isTranslucent=false
+08-24 22:30:57.741  3429  3674 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=1201, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10187 RequestorUid: 10187 RequestorPkg: com.spocky.projengmenu] ]
+08-24 22:30:57.742  3429  3674 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=1201, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10187 RequestorUid: 10187 RequestorPkg: com.spocky.projengmenu] ]
+08-24 22:30:57.742  3429  3730 D EthernetNetworkFactory: eth0: onNetworkNeeded for request: NetworkRequest [ REQUEST id=1201, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10187 RequestorUid: 10187 RequestorPkg: com.spocky.projengmenu] ]
+08-24 22:30:57.742  5116 29745 D TV_MtkTvConfig: Enter setConfigValue, inputGroup=-1, cfgId=g_misc__netflix_running_status, value=0, isUpdate=3
+08-24 22:30:57.742  5116 29745 D MtkTvConfig_jni: MtkTvConfig Java_com_mediatek_twoworlds_tv_TVNative_setConfigValue_1native
+08-24 22:30:57.742  5116 29745 D hw_mtktvapi_config(client): <a_mtktvapi_config_set_value:73> a_mtktvapi_config_set_value
+08-24 22:30:57.742  2838  3669 D MtkTvApiConfig(service): <a_hidl_a_mtktvapi_config_set_value:79> [Return ]ARG=[g_misc__netflix_running_status]
+08-24 22:30:57.742  2838  3669 D MtkTvApiConfig(service): <a_hidl_a_mtktvapi_config_set_value:81> [Return ]ARG=[0]
+08-24 22:30:57.743  5116 29745 D hw_mtktvapi_config(client): <a_mtktvapi_config_set_value:81> a_mtktvapi_config_set_value  i4_value=0, i4_ret=0
+08-24 22:30:57.743  5116 29745 D MtkTvConfig_jni: setConfigValue_native inputGroup = -1,s_cfgid = g_misc__netflix_running_status,value = 0 ,isUpdate = 3
+08-24 22:30:57.743  5116 29745 D TV_MtkTvConfig: Leave setConfigValue, return value = 0
+08-24 22:30:57.743  3429  3730 D EthernetNetworkFactory: Start Network with eth0 is running
+08-24 22:30:57.743  3429  3730 D EthernetNetworkFactory: IpClient already started
+08-24 22:30:57.744  5116 29745 D MtkTvSonyCustom_jni: id:15, value:0
+08-24 22:30:57.745  5116 29745 D MtkTvSonyCustom_jni: enter4kScaling param1= 0
+08-24 22:30:57.745  5116 29745 D (hw_mtal)(client): <MTDRVCUST_dcustom_cust_spec_set:424> ####  call MTDRVCUST_dcustom_cust_spec_set
+08-24 22:30:57.745  2838  3669 D MtkTvApi(service): <a_hidl_MTDRVCUST_dcustom_cust_spec_set:1457> enter a_hidl_MTDRVCUST_dcustom_cust_spec_set(131075,0)
+08-24 22:30:57.745  2838  3669 D MtkTvApi(service): <a_hidl_MTDRVCUST_dcustom_cust_spec_set:1459> exit a_hidl_MTDRVCUST_dcustom_cust_spec_set,return 0
+08-24 22:30:57.745  5116 29745 D (hw_mtal)(client): <MTDRVCUST_dcustom_cust_spec_set:427> ####  mt_ret=0 #### 
+08-24 22:30:57.745  5116 29745 D D_INTERFACE: jni_d_interface_set_enter_4k_scaling, ui1_value=0,i4_ret =0
+08-24 22:30:57.745  5116 29745 D MtkTvSonyCustom_jni: jni_d_interface_set_enter_4k_scaling ret= 0  
+08-24 22:30:57.745  5116 29745 D MtkTvSony: enter4kScaling false ret = 0
+08-24 22:30:57.747  5154  5154 D FirebaseSessions: App foregrounded on com.spocky.projengmenu
+08-24 22:30:57.750  3429  5284 I ActivityTaskManager: *********** COMPAT FOR PKG com.sony.dtv.gestureapp: {320dpi always-compat}
+08-24 22:30:57.754  3429  5284 D ConnectivityService: requestNetwork for uid/pid:10187/5154 activeRequest: null callbackRequest: 1202 [NetworkRequest [ REQUEST id=1203, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10187 RequestorUid: 10187 RequestorPkg: com.spocky.projengmenu] ]] callback flags: 0 priority: 2147483647
+08-24 22:30:57.754  3429  3684 D ConnectivityService: NetReassign [1203 : null → 114]
+08-24 22:30:57.757  3429  3674 D UntrustedWifiNetworkFactory: got request NetworkRequest [ REQUEST id=1203, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10187 RequestorUid: 10187 RequestorPkg: com.spocky.projengmenu] ]
+08-24 22:30:57.757  3429  3674 D OemPaidWifiNetworkFactory: got request NetworkRequest [ REQUEST id=1203, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10187 RequestorUid: 10187 RequestorPkg: com.spocky.projengmenu] ]
+08-24 22:30:57.757  3429  3730 D EthernetNetworkFactory: eth0: onNetworkNeeded for request: NetworkRequest [ REQUEST id=1203, [ Capabilities: INTERNET&NOT_RESTRICTED&TRUSTED&NOT_VCN_MANAGED Uid: 10187 RequestorUid: 10187 RequestorPkg: com.spocky.projengmenu] ]
+08-24 22:30:57.759  3429  3730 D EthernetNetworkFactory: Start Network with eth0 is running
+08-24 22:30:57.759  3429  3730 D EthernetNetworkFactory: IpClient already started
+08-24 22:30:57.773  3429  4906 I ActivityTaskManager: *********** COMPAT FOR PKG com.sony.dtv.seeds.iot: {320dpi always-compat}
+08-24 22:30:57.775  2785  2785 E hwcomposer: setReleaseFences layer size:0 layerdata size:1
+08-24 22:30:57.778  2782  9025 D gralloc4: mali_gralloc_select_format: req_format=0x00000001, usage=0x40000000000b00, req_base_format=0x1, alloc_format=0x30d00000001, internal_format=0x30d00000001
+08-24 22:30:57.778  2782  9025 D gralloc4: ION_IOC_CUSTOM
+08-24 22:30:57.780  2782  9025 D gralloc4: mali_gralloc_ion_allocate:a: hnd->shared_fd=8, hnd->iova=0x7b000000, cpu_ptr=0xeb367000, size=0x818000 internal_format=0x30d00000001
+08-24 22:30:57.781  9936 26428 I InternalTraitProviderService$c: onCreateAttribute: availableApplications
+08-24 22:30:57.781  9936  9936 I g       : onCreateTrait: com.sony.dtv.devicecontrolservice.trait.APPLICATION
+08-24 22:30:57.781  9936 26428 I InternalTraitProviderService$c: onCreateAttribute: isDeeplinkSupported
+08-24 22:30:57.781  2782  2782 D gralloc4: mali_gralloc_select_format: req_format=0x00000001, usage=0x40000000000b00, req_base_format=0x1, alloc_format=0x30d00000001, internal_format=0x30d00000001
+08-24 22:30:57.781  2782  2782 D gralloc4: ION_IOC_CUSTOM
+08-24 22:30:57.783  2782  2782 D gralloc4: mali_gralloc_ion_allocate:a: hnd->shared_fd=10, hnd->iova=0x79000000, cpu_ptr=0xeab4f000, size=0x818000 internal_format=0x30d00000001
+08-24 22:30:57.784  2782  2869 D gralloc4: mali_gralloc_select_format: req_format=0x00000001, usage=0x40000000000b00, req_base_format=0x1, alloc_format=0x30d00000001, internal_format=0x30d00000001
+08-24 22:30:57.784  2782  2869 D gralloc4: ION_IOC_CUSTOM
+08-24 22:30:57.785 29123 29335 I V2TraitNotifyService: [ANALYSIS] [REQ][WHAT: onStateValueChanged(com.sony.dtv.devicecontrolservice.trait.APPLICATION, currentApplication)]
+08-24 22:30:57.786  2782  2869 D gralloc4: mali_gralloc_ion_allocate:a: hnd->shared_fd=12, hnd->iova=0x78000000, cpu_ptr=0xeb367000, size=0x818000 internal_format=0x30d00000001
+08-24 22:30:57.786  9936 26428 I InternalTraitProviderService$c: onCreateAttribute: applicationInfo
+08-24 22:30:57.786  9936 26428 I InternalTraitProviderService$d: onCreateCommand: launchApplication
+08-24 22:30:57.787  9936 26428 I p       : onCreateParameter: launchApplication: packageName
+08-24 22:30:57.788  9936 26428 I InternalTraitProviderService$f: onCreateState: currentApplication
+08-24 22:30:57.790  2844  2898 D gralloc4: mali_gralloc_select_format: req_format=0x00000001, usage=0x40000000000b00, req_base_format=0x1, alloc_format=0x30d00000001, internal_format=0x30d00000001
+08-24 22:30:57.792  2785  2785 E hwcomposer: setReleaseFences layer size:0 layerdata size:1
+08-24 22:30:57.796 29123 30248 I ApplicationTraitRepositoryImpl: [ANALYSIS] [REQ][WHERE: getCurrentApplication][WHAT: valueAsString]
+08-24 22:30:57.806  9936 26428 I p       : onIsTraitAvailable
+08-24 22:30:57.808  2844  2913 E GPUAUX  : anb=0xf01cb438 Src_handle=0xf08c5110, hnd->fbmId=0x0
+08-24 22:30:57.808  2844  2913 D GPUAUX  : mali_gralloc_allocate(): handle=0xf08c5110, flags=4, usage=0x40000000000b00, w=1920, h=1080, stride=1920, size=8486912, byte_stride=7680, format=0x1, offset=0, share_fd=65 fbmId=0, fbChId=0x0 hnd->iova=0x7b000000
+08-24 22:30:57.809  2785  2785 E hwcomposer: setReleaseFences layer size:0 layerdata size:1
+08-24 22:30:57.814  4506  4506 I GoogleInputMethodService: GoogleInputMethodService.onFinishInput():2097 
+08-24 22:30:57.814  9936 26593 I p       : onQueryStates: currentApplication
+08-24 22:30:57.815  4506  4506 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 0, locked = false
+08-24 22:30:57.816  4506  4506 I GoogleInputMethodService: GoogleInputMethodService.onStartInput():1357 onStartInput(EditorInfo{EditorInfo{packageName=com.spocky.projengmenu, inputType=0, inputTypeString=NULL, enableLearning=false, autoCorrection=false, autoComplete=false, imeOptions=0, privateImeOptions=null, actionName=UNSPECIFIED, actionLabel=null, initialSelStart=-1, initialSelEnd=-1, initialCapsMode=0, label=null, fieldId=0, fieldName=null, extras=null, hintText=null, hintLocales=[]}}, false)
+08-24 22:30:57.817  4506  4506 I Module  : DeviceLockedStatusModuleProvider$Module.updateDeviceLockedStatus():100 repeatCheckTimes = 1, locked = false
+08-24 22:30:57.817  2844  2899 D gralloc4: mali_gralloc_select_format: req_format=0x00000001, usage=0x40000000000b00, req_base_format=0x1, alloc_format=0x30d00000001, internal_format=0x30d00000001
+08-24 22:30:57.818 29123 30248 I ApplicationTraitRepositoryImpl: [ANALYSIS] [RES][WHERE: getCurrentApplication][WHAT: valueAsString][RESULT: com.spocky.projengmenu]
+08-24 22:30:57.822  9936 26428 I p       : onQueryStates: currentApplication
+08-24 22:30:57.824  2844  2913 E GPUAUX  : anb=0xf01c7ff8 Src_handle=0xf08c4150, hnd->fbmId=0x0
+08-24 22:30:57.824  2844  2913 D GPUAUX  : mali_gralloc_allocate(): handle=0xf08c4150, flags=4, usage=0x40000000000b00, w=1920, h=1080, stride=1920, size=8486912, byte_stride=7680, format=0x1, offset=0, share_fd=68 fbmId=0, fbChId=0x0 hnd->iova=0x78000000
+08-24 22:30:57.831  2844  3608 D gralloc4: mali_gralloc_select_format: req_format=0x00000001, usage=0x40000000000b00, req_base_format=0x1, alloc_format=0x30d00000001, internal_format=0x30d00000001
+08-24 22:30:57.836 12656 12706 I System.out: SQL Query: SELECT * FROM trigger_actions WHERE is_enabled = 1 SQL Args: []
+08-24 22:30:57.836 12656 12706 I System.out: SQL Query: SELECT * FROM trigger_actions WHERE is_enabled = 1 SQL Args: []
+08-24 22:30:57.841  2844  2913 E GPUAUX  : anb=0xf01c9968 Src_handle=0xf08c2650, hnd->fbmId=0x0
+08-24 22:30:57.841  2844  2913 D GPUAUX  : mali_gralloc_allocate(): handle=0xf08c2650, flags=4, usage=0x40000000000b00, w=1920, h=1080, stride=1920, size=8486912, byte_stride=7680, format=0x1, offset=0, share_fd=73 fbmId=0, fbChId=0x0 hnd->iova=0x79000000
+08-24 22:30:57.857  5154  5176 I cky.projengmen: Background young concurrent copying GC freed 275046(10MB) AllocSpace objects, 240(8224KB) LOS objects, 30% free, 40MB/57MB, paused 1.586ms total 118.196ms
+08-24 22:30:57.983  2980 31810 W adbd    : timed out while waiting for FUNCTIONFS_BIND, trying again
+08-24 22:30:57.983  2980 31810 I adbd    : UsbFfs: connection terminated: monitor thread finished
+08-24 22:30:57.984  2980  2980 I adbd    : UsbFfs: already offline
+08-24 22:30:57.984  2980  2980 I adbd    : destroying transport UsbFfs
+08-24 22:30:57.984  2980  2980 I adbd    : UsbFfsConnection being destroyed
+08-24 22:30:58.030  2980  2999 I adbd    : opening control endpoint /dev/usb-ffs/adb/ep0
+08-24 22:30:58.031  2980  2999 I adbd    : UsbFfsConnection constructed
+08-24 22:30:58.032  2980 31828 I adbd    : UsbFfs-monitor thread spawned

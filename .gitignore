@@ -79,3 +79,12 @@ st_apk_stable/
 st_apk_stable2/
 build*.log
 gemtube_*.apk*
+
+# Temporary extraction/debugging files
+extracted/
+extracted_gemtube/
+java_src/
+ci_run_logs*.zip
+paste.txt
+replay_pid*.log
+nul

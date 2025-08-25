@@ -109,6 +109,11 @@
     <string name="you_wont_see_this_video">Video has been removed from recommended</string>
     <string name="you_wont_see_this_channel">You won\'t see this channel in recommendations</string>
     <string name="settings_search">Search</string>
+    <string name="gemini_settings_title">AI Summaries (Gemini)</string>
+    <string name="gemini_category_title">Summaries</string>
+    <string name="gemini_enable_summaries">Enable video summaries on focus</string>
+    <string name="gemini_delay_title">Summary delay</string>
+    <string name="gemini_delay_seconds">%1$d seconds</string>
     <string name="dialog_search">Search</string>
     <string name="instant_voice_search">Instant voice search</string>
     <string name="option_background_playback_behind">Play behind</string>

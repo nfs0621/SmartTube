@@ -28,6 +28,8 @@ import com.liskovsoft.smartyoutubetv2.tv.ui.common.LeanbackActivity;
 import com.liskovsoft.smartyoutubetv2.tv.ui.common.UriBackgroundManager;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.fragments.GridFragment;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
+import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.summary.VideoSummaryOverlay;
+import com.liskovsoft.smartyoutubetv2.tv.ai.GeminiClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +46,11 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
     private Video mSelectedItem;
     private float mVideoGridScale;
     private final Runnable mRestoreTask = this::restorePosition;
+    private final Handler mSummaryHandler = new Handler();
+    private Runnable mSummaryRunnable;
+    private Video mPendingSummaryVideo;
+    private VideoSummaryOverlay mSummaryOverlay;
+    private GeminiClient mGemini;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -53,6 +60,8 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
         mCardPresenter = isShorts() ? new ShortsCardPresenter() : new VideoCardPresenter();
         mBackgroundManager = ((LeanbackActivity) getActivity()).getBackgroundManager();
         mVideoGridScale = MainUIData.instance(getActivity()).getVideoGridScale();
+        mSummaryOverlay = new VideoSummaryOverlay(getActivity());
+        mGemini = new GeminiClient(getContext());
 
         setupAdapter();
         setupEventListeners();
@@ -274,6 +283,8 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
                 mMainPresenter.onVideoItemSelected((Video) item);
 
                 checkScrollEnd((Video) item);
+
+                scheduleSummary((Video) item);
             }
         }
 
@@ -285,5 +296,39 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
                 mMainPresenter.onScrollEnd((Video) mGridAdapter.get(size - 1));
             }
         }
+    }
+
+    private void scheduleSummary(Video video) {
+        // Cancel previous
+        if (mSummaryRunnable != null) {
+            mSummaryHandler.removeCallbacks(mSummaryRunnable);
+        }
+        mPendingSummaryVideo = video;
+        mSummaryRunnable = () -> triggerSummary(mPendingSummaryVideo);
+        mSummaryHandler.postDelayed(mSummaryRunnable, 5000);
+    }
+
+    private void triggerSummary(Video video) {
+        if (video == null || getActivity() == null) return;
+        if (mSummaryOverlay == null) mSummaryOverlay = new VideoSummaryOverlay(getActivity());
+        mSummaryOverlay.showLoading("Summarizing " + (video.title != null ? video.title : "video") + "...");
+
+        new Thread(() -> {
+            String body;
+            String title = "Gemini Summary";
+            try {
+                if (mGemini != null && mGemini.isConfigured()) {
+                    body = mGemini.summarize(video.title, video.author, video.videoId);
+                } else {
+                    body = "Gemini API key not configured.\n\nAdd it to assets/gemini.properties (API_KEY=...).";
+                }
+            } catch (Exception e) {
+                body = "Failed to get summary:\n" + e.getMessage();
+            }
+            final String fBody = body;
+            final String fTitle = title;
+            if (getActivity() == null) return;
+            getActivity().runOnUiThread(() -> mSummaryOverlay.showText(fTitle, fBody));
+        }).start();
     }
 }

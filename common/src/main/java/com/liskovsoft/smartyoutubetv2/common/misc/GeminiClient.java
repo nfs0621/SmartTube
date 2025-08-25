@@ -22,7 +22,7 @@ import java.util.Properties;
  * Minimal Gemini client using REST API. Reads API key from assets/gemini.properties (API_KEY=...).
  */
 public class GeminiClient {
-    private static final String MODEL = "gemini-1.5-flash";
+    private static final String MODEL = "gemini-2.5-flash";
     private static final String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent?key=";
     private final String apiKey;
 
@@ -35,10 +35,14 @@ public class GeminiClient {
     }
 
     public String summarize(String title, String author, String videoId) throws IOException, JSONException {
+        return summarize(title, author, videoId, "moderate");
+    }
+    
+    public String summarize(String title, String author, String videoId, String detailLevel) throws IOException, JSONException {
         if (TextUtils.isEmpty(apiKey)) {
             return "Gemini API key not set. Put API_KEY in assets/gemini.properties";
         }
-        String prompt = buildPrompt(title, author, videoId);
+        String prompt = buildPrompt(title, author, videoId, detailLevel);
         JSONObject req = new JSONObject();
         JSONArray parts = new JSONArray().put(new JSONObject().put("text", prompt));
         JSONObject content = new JSONObject().put("parts", parts);
@@ -77,11 +81,27 @@ public class GeminiClient {
         return resp;
     }
 
-    private static String buildPrompt(String title, String author, String videoId) {
+    private static String buildPrompt(String title, String author, String videoId, String detailLevel) {
         StringBuilder sb = new StringBuilder();
-        sb.append("You are an assistant for Android TV. Summarize this YouTube video succinctly for TV reading.\n");
-        sb.append("Use bullet points and short paragraphs.\n");
-        sb.append("Include: topic, key takeaways, who it's for.\n\n");
+        sb.append("You are an assistant for Android TV. Summarize this YouTube video for TV reading.\n");
+        
+        // Add detail level specific instructions
+        switch (detailLevel.toLowerCase()) {
+            case "concise":
+                sb.append("Keep it VERY brief - maximum 2-3 bullet points. Focus only on the main topic and key takeaway.\n");
+                break;
+            case "detailed":
+                sb.append("Provide a comprehensive summary with multiple bullet points.\n");
+                sb.append("Include: detailed topic overview, key takeaways, target audience, main points covered, and any important conclusions.\n");
+                break;
+            case "moderate":
+            default:
+                sb.append("Use bullet points and short paragraphs.\n");
+                sb.append("Include: topic, key takeaways, who it's for.\n");
+                break;
+        }
+        
+        sb.append("\n");
         if (!TextUtils.isEmpty(title)) sb.append("Title: ").append(title).append("\n");
         if (!TextUtils.isEmpty(author)) sb.append("Channel: ").append(author).append("\n");
         if (!TextUtils.isEmpty(videoId)) sb.append("VideoID: ").append(videoId).append("\n");

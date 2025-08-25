@@ -713,4 +713,8 @@
     <string name="card_unlocalized_titles">Unlocalized video titles</string>
     <string name="dont_resize_video_to_fit_dialog">Don\'t resize video to fit dialog</string>
     <string name="menu_item_gemini_summary">Gemini Summary</string>
+    <string name="gemini_detail_level_title">Summary Detail Level</string>
+    <string name="gemini_detail_level_concise">Concise</string>
+    <string name="gemini_detail_level_moderate">Moderate</string>
+    <string name="gemini_detail_level_detailed">Detailed</string>
 </resources>

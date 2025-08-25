@@ -46,6 +46,17 @@ public class GeminiSettingsPresenter {
         }
         dlg.appendRadioCategory(context.getString(R.string.gemini_delay_title), delays);
 
+        // Detail level setting
+        List<OptionItem> detailLevels = new ArrayList<>();
+        String currentLevel = data.getDetailLevel();
+        detailLevels.add(UiOptionItem.from(context.getString(R.string.gemini_detail_level_concise), 
+            opt -> data.setDetailLevel("concise"), "concise".equals(currentLevel)));
+        detailLevels.add(UiOptionItem.from(context.getString(R.string.gemini_detail_level_moderate), 
+            opt -> data.setDetailLevel("moderate"), "moderate".equals(currentLevel)));
+        detailLevels.add(UiOptionItem.from(context.getString(R.string.gemini_detail_level_detailed), 
+            opt -> data.setDetailLevel("detailed"), "detailed".equals(currentLevel)));
+        dlg.appendRadioCategory(context.getString(R.string.gemini_detail_level_title), detailLevels);
+
         dlg.showDialog(context.getString(R.string.gemini_settings_title), null);
     }
 }

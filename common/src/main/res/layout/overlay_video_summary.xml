@@ -6,6 +6,7 @@
     android:clickable="true"
     android:focusable="true"
     android:focusableInTouchMode="true"
+    android:descendantFocusability="beforeDescendants"
     android:visibility="gone">
 
     <LinearLayout
@@ -52,7 +53,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="#FFFFFF"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:lineSpacingExtra="4dp" />
         </ScrollView>
 
@@ -62,7 +63,7 @@
             android:layout_height="wrap_content"
             android:textColor="#AAAAAA"
             android:textSize="14sp"
-            android:text="DPAD Up/Down: scroll • Left: close" />
+            android:text="Up/Down: scroll • Left/Right/Back: close" />
     </LinearLayout>
 
 </FrameLayout>

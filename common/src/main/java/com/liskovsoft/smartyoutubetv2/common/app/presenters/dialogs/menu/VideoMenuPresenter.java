@@ -969,7 +969,10 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                     String title = "Gemini Summary";
                     
                     if (gemini.isConfigured()) {
-                        summary = gemini.summarize(video.title, video.author, video.videoId);
+                        com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData geminiData = 
+                            com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
+                        String detailLevel = geminiData.getDetailLevel();
+                        summary = gemini.summarize(video.title, video.author, video.videoId, detailLevel);
                     } else {
                         summary = "Gemini API key not configured.\n\nAdd it to assets/gemini.properties (API_KEY=...).";
                     }

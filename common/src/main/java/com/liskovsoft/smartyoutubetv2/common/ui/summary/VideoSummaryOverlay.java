@@ -37,21 +37,48 @@ public class VideoSummaryOverlay {
         text = root.findViewById(R.id.gemini_text);
         scroll = root.findViewById(R.id.gemini_scroll);
 
-        root.setOnKeyListener((v, keyCode, event) -> {
-            if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
-            if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-                hide();
-                return true;
-            } else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-                scrollBy(-200);
-                return true;
-            } else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-                scrollBy(200);
-                return true;
+        // Create a custom FrameLayout to intercept key events
+        android.widget.FrameLayout customRoot = new android.widget.FrameLayout(activity) {
+            @Override
+            public boolean dispatchKeyEvent(KeyEvent event) {
+                if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                    int keyCode = event.getKeyCode();
+                    
+                    // Close overlay on back, left, or right
+                    if (keyCode == KeyEvent.KEYCODE_BACK || 
+                        keyCode == KeyEvent.KEYCODE_DPAD_LEFT || 
+                        keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                        hide();
+                        return true;
+                    } 
+                    // Scroll with up/down
+                    else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+                        VideoSummaryOverlay.this.scrollBy(-200);
+                        return true;
+                    } else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                        VideoSummaryOverlay.this.scrollBy(200);
+                        return true;
+                    }
+                }
+                return super.dispatchKeyEvent(event);
             }
-            return false;
-        });
-
+        };
+        
+        // Set layout params and properties on the custom root
+        customRoot.setLayoutParams(root.getLayoutParams());
+        customRoot.setClickable(true);
+        customRoot.setFocusable(true);
+        customRoot.setFocusableInTouchMode(true);
+        
+        // Move all children from root to customRoot
+        ViewGroup rootGroup = (ViewGroup) root;
+        while (rootGroup.getChildCount() > 0) {
+            View child = rootGroup.getChildAt(0);
+            rootGroup.removeView(child);
+            customRoot.addView(child);
+        }
+        
+        root = customRoot;
         content.addView(root);
     }
 
@@ -75,6 +102,7 @@ public class VideoSummaryOverlay {
         status.setText(title);
         text.setText(body);
         handler.post(() -> scroll.scrollTo(0, 0));
+        root.requestFocus(); // Ensure overlay keeps focus for D-pad navigation
     }
 
     public void hide() {

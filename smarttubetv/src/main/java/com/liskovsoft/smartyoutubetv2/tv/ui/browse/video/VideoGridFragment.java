@@ -30,7 +30,7 @@ import com.liskovsoft.smartyoutubetv2.tv.ui.common.UriBackgroundManager;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.fragments.GridFragment;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.summary.VideoSummaryOverlay;
-import com.liskovsoft.smartyoutubetv2.tv.ai.GeminiClient;
+import com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -365,7 +365,11 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
                 android.util.Log.d(TAG, "Gemini API configured: " + (mGemini != null && mGemini.isConfigured()));
                 if (mGemini != null && mGemini.isConfigured()) {
                     android.util.Log.d(TAG, "Calling Gemini API for video: " + video.title);
-                    body = mGemini.summarize(video.title, video.author, video.videoId);
+                    com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData geminiData = 
+                        com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
+                    String detailLevel = geminiData.getDetailLevel();
+                    android.util.Log.d(TAG, "Using detail level: " + detailLevel);
+                    body = mGemini.summarize(video.title, video.author, video.videoId, detailLevel);
                     android.util.Log.d(TAG, "Gemini API response received, length: " + body.length());
                 } else {
                     body = "Gemini API key not configured.\n\nAdd it to assets/gemini.properties (API_KEY=...).";

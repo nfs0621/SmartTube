@@ -6,6 +6,7 @@ import android.content.Context;
 public class GeminiData {
     private static final String KEY_ENABLED = "gemini_enabled";
     private static final String KEY_DELAY_MS = "gemini_delay_ms";
+    private static final String KEY_DETAIL_LEVEL = "gemini_detail_level";
     @SuppressLint("StaticFieldLeak")
     private static GeminiData sInstance;
     private final AppPrefs mPrefs;
@@ -33,6 +34,14 @@ public class GeminiData {
 
     public void setDelayMs(int ms) {
         mPrefs.putInt(KEY_DELAY_MS, ms);
+    }
+
+    public String getDetailLevel() {
+        return mPrefs.getString(KEY_DETAIL_LEVEL, "moderate");
+    }
+
+    public void setDetailLevel(String level) {
+        mPrefs.putString(KEY_DETAIL_LEVEL, level);
     }
 }
 

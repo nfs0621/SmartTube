@@ -62,6 +62,8 @@ dependencies {
     implementation project(':fragment-1.1.0')
     implementation project(':mediaserviceinterfaces')
     implementation project(':youtubeapi')
+    // Needed at compile time when referencing VideoInfoService from common
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation project(':filepicker-lib')
 
     implementation 'io.reactivex.rxjava2:rxandroid:' + rxAndroidVersion

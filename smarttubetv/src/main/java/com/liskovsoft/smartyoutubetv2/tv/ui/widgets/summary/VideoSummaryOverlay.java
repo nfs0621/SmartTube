@@ -37,17 +37,23 @@ public class VideoSummaryOverlay {
         text = root.findViewById(R.id.gemini_text);
         scroll = root.findViewById(R.id.gemini_scroll);
 
+        root.setFocusable(true);
+        root.setFocusableInTouchMode(true);
         root.setOnKeyListener((v, keyCode, event) -> {
             if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
-            if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-                hide();
-                return true;
-            } else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-                scrollBy(-200);
-                return true;
-            } else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-                scrollBy(200);
-                return true;
+            switch (keyCode) {
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                case KeyEvent.KEYCODE_DPAD_RIGHT:
+                case KeyEvent.KEYCODE_BACK:
+                case KeyEvent.KEYCODE_ESCAPE:
+                    hide();
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_UP:
+                    scrollBy(-200);
+                    return true;
+                case KeyEvent.KEYCODE_DPAD_DOWN:
+                    scrollBy(200);
+                    return true;
             }
             return false;
         });

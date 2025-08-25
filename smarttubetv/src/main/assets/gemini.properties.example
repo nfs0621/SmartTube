@@ -1,7 +1,6 @@
 # Copy this file to smarttubetv/src/main/assets/gemini.properties and fill values.
 # Do NOT commit real keys.
 
-GEMINI_API_KEY=
-GEMINI_MODEL=gemini-1.5-flash
-SUMMARY_DETAIL_LEVEL=moderate
-
+# Example:
+# API_KEY=your_api_key_here
+API_KEY=

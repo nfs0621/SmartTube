@@ -911,6 +911,7 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
         mMenuMapping.put(MainUIData.MENU_ITEM_TOGGLE_HISTORY, new MenuAction(this::appendToggleHistoryButton, true));
         mMenuMapping.put(MainUIData.MENU_ITEM_CLEAR_HISTORY, new MenuAction(this::appendClearHistoryButton, true));
         mMenuMapping.put(MainUIData.MENU_ITEM_OPEN_COMMENTS, new MenuAction(this::appendOpenCommentsButton, false));
+        mMenuMapping.put(MainUIData.MENU_ITEM_GEMINI_SUMMARY, new MenuAction(this::appendGeminiSummaryButton, false));
 
         for (ContextMenuProvider provider : new ContextMenuManager(getContext()).getProviders()) {
             if (provider.getMenuType() != ContextMenuProvider.MENU_TYPE_VIDEO) {
@@ -926,6 +927,67 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
             mDialogPresenter.appendSingleButton(
                     UiOptionItem.from(getContext().getString(provider.getTitleResId()), optionItem -> provider.onClicked(getVideo(), getCallback()))
             );
+        }
+    }
+
+    private void appendGeminiSummaryButton() {
+        MainUIData mainUIData = MainUIData.instance(getContext());
+        
+        if (mainUIData.isMenuItemEnabled(MainUIData.MENU_ITEM_GEMINI_SUMMARY)) {
+            mDialogPresenter.appendSingleButton(
+                    UiOptionItem.from(getContext().getString(R.string.menu_item_gemini_summary), optionItem -> {
+                        mDialogPresenter.closeDialog();
+                        showGeminiSummary();
+                    })
+            );
+        }
+    }
+
+    private void showGeminiSummary() {
+        Video video = getVideo();
+        if (video == null) return;
+
+        // Close the current dialog first
+        mDialogPresenter.closeDialog();
+
+        // Create the proper overlay (like in VideoGridFragment)
+        if (getContext() instanceof android.app.Activity) {
+            android.app.Activity activity = (android.app.Activity) getContext();
+            com.liskovsoft.smartyoutubetv2.common.ui.summary.VideoSummaryOverlay summaryOverlay = 
+                new com.liskovsoft.smartyoutubetv2.common.ui.summary.VideoSummaryOverlay(activity);
+            
+            summaryOverlay.showLoading("Summarizing " + (video.title != null ? video.title : "video") + "...");
+
+            // Run Gemini API call in background thread
+            new Thread(() -> {
+                try {
+                    // Use the same GeminiClient as in VideoGridFragment
+                    com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient gemini = 
+                        new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
+                    
+                    String summary;
+                    String title = "Gemini Summary";
+                    
+                    if (gemini.isConfigured()) {
+                        summary = gemini.summarize(video.title, video.author, video.videoId);
+                    } else {
+                        summary = "Gemini API key not configured.\n\nAdd it to assets/gemini.properties (API_KEY=...).";
+                    }
+                    
+                    final String finalSummary = summary;
+                    final String finalTitle = title;
+                    
+                    // Show the summary on the UI thread using the proper overlay
+                    activity.runOnUiThread(() -> {
+                        summaryOverlay.showText(finalTitle, finalSummary);
+                    });
+                } catch (Exception e) {
+                    String errorMsg = "Failed to get summary:\n" + e.getMessage();
+                    activity.runOnUiThread(() -> {
+                        summaryOverlay.showText("Error", errorMsg);
+                    });
+                }
+            }).start();
         }
     }
 }

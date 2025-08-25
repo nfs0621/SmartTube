@@ -1,6 +1,7 @@
 package com.liskovsoft.smartyoutubetv2.tv.ui.browse.video;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.leanback.widget.OnItemViewSelectedListener;
@@ -69,6 +70,16 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
 
         if (getMainFragmentAdapter().getFragmentHost() != null) {
             getMainFragmentAdapter().getFragmentHost().notifyDataReady(getMainFragmentAdapter());
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        // Cancel any pending summary operations
+        if (mSummaryHandler != null && mSummaryRunnable != null) {
+            android.util.Log.d(TAG, "Cancelling pending Gemini summary on fragment destroy");
+            mSummaryHandler.removeCallbacks(mSummaryRunnable);
         }
     }
 
@@ -301,39 +312,73 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
     private void scheduleSummary(Video video) {
         // Cancel previous
         if (mSummaryRunnable != null) {
+            android.util.Log.d(TAG, "Cancelling previous Gemini summary timer");
             mSummaryHandler.removeCallbacks(mSummaryRunnable);
+            mSummaryRunnable = null;
         }
+        
+        // Check if video is null or same as previous
+        if (video == null) {
+            android.util.Log.d(TAG, "Not scheduling summary - video is null");
+            return;
+        }
+        
         // Check settings
         com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
         if (!gd.isEnabled()) {
+            android.util.Log.d(TAG, "Gemini summaries disabled in settings");
             return;
         }
+        
+        // Don't reschedule for same video
+        if (mPendingSummaryVideo != null && video.equals(mPendingSummaryVideo)) {
+            android.util.Log.d(TAG, "Not rescheduling - same video already pending: " + video.title);
+            return;
+        }
+        
         int delay = gd.getDelayMs();
+        android.util.Log.d(TAG, "Scheduling Gemini summary for: " + video.title + " with delay: " + delay + "ms");
         mPendingSummaryVideo = video;
-        mSummaryRunnable = () -> triggerSummary(mPendingSummaryVideo);
-        mSummaryHandler.postDelayed(mSummaryRunnable, Math.max(1000, delay));
+        final Video capturedVideo = video; // Capture the video to avoid race conditions
+        mSummaryRunnable = () -> {
+            android.util.Log.d(TAG, "Timer triggered - calling triggerSummary for: " + capturedVideo.title);
+            triggerSummary(capturedVideo);
+        };
+        boolean posted = mSummaryHandler.postDelayed(mSummaryRunnable, Math.max(1000, delay));
+        android.util.Log.d(TAG, "Timer posted successfully: " + posted);
     }
 
     private void triggerSummary(Video video) {
-        if (video == null || getActivity() == null) return;
+        android.util.Log.d(TAG, "triggerSummary called for: " + (video != null ? video.title : "null"));
+        if (video == null || getActivity() == null) {
+            android.util.Log.d(TAG, "triggerSummary aborted - video is null: " + (video == null) + ", activity is null: " + (getActivity() == null));
+            return;
+        }
         if (mSummaryOverlay == null) mSummaryOverlay = new VideoSummaryOverlay(getActivity());
+        android.util.Log.d(TAG, "Showing Gemini loading overlay for: " + video.title);
         mSummaryOverlay.showLoading("Summarizing " + (video.title != null ? video.title : "video") + "...");
 
         new Thread(() -> {
             String body;
             String title = "Gemini Summary";
             try {
+                android.util.Log.d(TAG, "Gemini API configured: " + (mGemini != null && mGemini.isConfigured()));
                 if (mGemini != null && mGemini.isConfigured()) {
+                    android.util.Log.d(TAG, "Calling Gemini API for video: " + video.title);
                     body = mGemini.summarize(video.title, video.author, video.videoId);
+                    android.util.Log.d(TAG, "Gemini API response received, length: " + body.length());
                 } else {
                     body = "Gemini API key not configured.\n\nAdd it to assets/gemini.properties (API_KEY=...).";
+                    android.util.Log.d(TAG, "Gemini API not configured");
                 }
             } catch (Exception e) {
                 body = "Failed to get summary:\n" + e.getMessage();
+                android.util.Log.e(TAG, "Gemini API error: " + e.getMessage(), e);
             }
             final String fBody = body;
             final String fTitle = title;
             if (getActivity() == null) return;
+            android.util.Log.d(TAG, "Updating UI with Gemini summary");
             getActivity().runOnUiThread(() -> mSummaryOverlay.showText(fTitle, fBody));
         }).start();
     }

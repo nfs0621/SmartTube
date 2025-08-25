@@ -44,7 +44,7 @@ public class GeminiSettingsPresenter {
             final int ms = values[i];
             delays.add(UiOptionItem.from(titles[i], opt -> data.setDelayMs(ms), current == ms));
         }
-        dlg.appendSingleSwitchCategory(context.getString(R.string.gemini_delay_title), delays);
+        dlg.appendRadioCategory(context.getString(R.string.gemini_delay_title), delays);
 
         dlg.showDialog(context.getString(R.string.gemini_settings_title), null);
     }

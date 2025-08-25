@@ -70,3 +70,12 @@ tmp/
 fabric.properties
 *BAK.java
 hs_err_pid*.log
+# Local artifacts and tools
+apktool.jar
+*.apk
+*.idsig
+st_apk/
+st_apk_stable/
+st_apk_stable2/
+build*.log
+gemtube_*.apk*

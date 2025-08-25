@@ -13,6 +13,11 @@
 // limitations under the License.
 apply from: "${buildscript.sourceFile.parentFile}/javadoc_util.gradle"
 
+// Allow builds to skip Javadoc configuration (e.g., on Windows path issues).
+if (project.hasProperty('skipExoJavadoc')) {
+    return
+}
+
 android.libraryVariants.all { variant ->
     def name = variant.buildType.name
     if (!name.equals("release")) {

@@ -62,7 +62,7 @@
             android:layout_height="wrap_content"
             android:textColor="#AAAAAA"
             android:textSize="14sp"
-            android:text="OK: mark watched • Up/Down: scroll • Left/Right/Back: close" />
+            android:text="Auto-marked as watched • Up/Down: scroll • OK/Left/Right/Back: close" />
     </LinearLayout>
 
 </FrameLayout>

@@ -911,7 +911,7 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
         mMenuMapping.put(MainUIData.MENU_ITEM_TOGGLE_HISTORY, new MenuAction(this::appendToggleHistoryButton, true));
         mMenuMapping.put(MainUIData.MENU_ITEM_CLEAR_HISTORY, new MenuAction(this::appendClearHistoryButton, true));
         mMenuMapping.put(MainUIData.MENU_ITEM_OPEN_COMMENTS, new MenuAction(this::appendOpenCommentsButton, false));
-        mMenuMapping.put(MainUIData.MENU_ITEM_GEMINI_SUMMARY, new MenuAction(this::appendGeminiSummaryButton, false));
+        mMenuMapping.put(MainUIData.MENU_ITEM_GEMINI_SUMMARY, new MenuAction(this::appendGeminiSummaryButtons, false));
 
         for (ContextMenuProvider provider : new ContextMenuManager(getContext()).getProviders()) {
             if (provider.getMenuType() != ContextMenuProvider.MENU_TYPE_VIDEO) {
@@ -930,21 +930,65 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
         }
     }
 
-    private void appendGeminiSummaryButton() {
+    private void appendGeminiSummaryButtons() {
         MainUIData mainUIData = MainUIData.instance(getContext());
         
         if (mainUIData.isMenuItemEnabled(MainUIData.MENU_ITEM_GEMINI_SUMMARY)) {
+            // Top option: Default (uses settings)
             mDialogPresenter.appendSingleButton(
-                    UiOptionItem.from(getContext().getString(R.string.menu_item_gemini_summary), optionItem -> {
+                    UiOptionItem.from("Gemini Summary - Default", optionItem -> {
                         mDialogPresenter.closeDialog();
-                        showGeminiSummary();
+                        showGeminiSummary(); // Uses settings
+                    })
+            );
+            
+            // Reverse order: Detailed first, then Concise
+            mDialogPresenter.appendSingleButton(
+                    UiOptionItem.from("Gemini Summary - Transcript - Detailed", optionItem -> {
+                        mDialogPresenter.closeDialog();
+                        showGeminiSummary("transcript", "detailed");
+                    })
+            );
+            mDialogPresenter.appendSingleButton(
+                    UiOptionItem.from("Gemini Summary - Transcript - Concise", optionItem -> {
+                        mDialogPresenter.closeDialog();
+                        showGeminiSummary("transcript", "concise");
+                    })
+            );
+            mDialogPresenter.appendSingleButton(
+                    UiOptionItem.from("Gemini Summary - URL - Detailed", optionItem -> {
+                        mDialogPresenter.closeDialog();
+                        showGeminiSummary("url", "detailed");
+                    })
+            );
+            mDialogPresenter.appendSingleButton(
+                    UiOptionItem.from("Gemini Summary - URL - Concise", optionItem -> {
+                        mDialogPresenter.closeDialog();
+                        showGeminiSummary("url", "concise");
                     })
             );
         }
     }
 
     private void showGeminiSummary() {
+        // Get current settings for default option
+        com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData geminiData = 
+            com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
+        showGeminiSummary(geminiData.getMode(), geminiData.getDetailLevel());
+    }
+    
+    private void showGeminiSummary(String mode, String detailLevel) {
         Video video = getVideo();
+        android.util.Log.d("VideoMenuPresenter", "=== MANUAL GEMINI SUMMARY DEBUG ===");
+        if (video != null) {
+            android.util.Log.d("VideoMenuPresenter", "Menu Video Title: " + video.title);
+            android.util.Log.d("VideoMenuPresenter", "Menu Video Author: " + video.author);
+            android.util.Log.d("VideoMenuPresenter", "Menu Video ID: " + video.videoId);
+            android.util.Log.d("VideoMenuPresenter", "Menu Video startTimeSeconds: " + video.startTimeSeconds);
+        } else {
+            android.util.Log.d("VideoMenuPresenter", "Menu Video is NULL");
+        }
+        android.util.Log.d("VideoMenuPresenter", "===================================");
         if (video == null) return;
 
         // Close the current dialog first
@@ -957,21 +1001,8 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                 new com.liskovsoft.smartyoutubetv2.common.ui.summary.VideoSummaryOverlay(activity);
             
             summaryOverlay.showLoading("Summarizing " + (video.title != null ? video.title : "video") + "...");
-            // Mark watched on OK/Enter
-            summaryOverlay.setOnConfirmListener(() -> {
-                try {
-                    com.liskovsoft.smartyoutubetv2.common.app.models.data.Video v = video;
-                    if (v != null && v.hasVideo()) {
-                        com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.instance().updateHistory(v, 0);
-                        v.markFullyViewed();
-                        com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).save(
-                                new com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.State(v, v.getDurationMs())
-                        );
-                        com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).persistState();
-                        com.liskovsoft.smartyoutubetv2.common.app.models.data.Playlist.instance().sync(v);
-                    }
-                } catch (Throwable ignored) {}
-            });
+            // Auto-mark videos watched - no button needed
+            summaryOverlay.setOnConfirmListener(null);
 
             // Run Gemini API call in background thread
             new Thread(() -> {
@@ -984,10 +1015,32 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                     String title = "Gemini Summary";
                     
                     if (gemini.isConfigured()) {
-                        com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData geminiData = 
-                            com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
-                        String detailLevel = geminiData.getDetailLevel();
-                        summary = gemini.summarize(video.title, video.author, video.videoId, detailLevel);
+                        int startSec = Math.max(0, video.startTimeSeconds);
+                        summary = gemini.summarize(video.title, video.author, video.videoId, detailLevel, startSec, mode);
+                        // Update title to include mode and model used
+                        title = "Gemini Summary [" + mode.toUpperCase() + " - " + detailLevel.toUpperCase() + " - " + gemini.getLastUsedModel() + "]";
+                        
+                        // Auto-mark video as watched when summary is generated successfully
+                        try {
+                            com.liskovsoft.smartyoutubetv2.common.app.models.data.Video v = video;
+                            if (v != null && v.hasVideo()) {
+                                com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.instance().updateHistory(v, 0);
+                                v.markFullyViewed();
+                                com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).save(
+                                        new com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.State(v, v.getDurationMs())
+                                );
+                                com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).persistState();
+                                com.liskovsoft.smartyoutubetv2.common.app.models.data.Playlist.instance().sync(v);
+                                android.util.Log.d("VideoMenuPresenter", "Video auto-marked as watched: " + v.title);
+                                
+                                // Show toast notification on UI thread
+                                activity.runOnUiThread(() -> {
+                                    android.widget.Toast.makeText(getContext(), "✓ " + getContext().getString(com.liskovsoft.smartyoutubetv2.common.R.string.mark_as_watched), android.widget.Toast.LENGTH_LONG).show();
+                                });
+                            }
+                        } catch (Throwable e) {
+                            android.util.Log.e("VideoMenuPresenter", "Error auto-marking video as watched: " + e.getMessage());
+                        }
                     } else {
                         summary = "Gemini API key not configured.\n\nAdd it to assets/gemini.properties (API_KEY=...).";
                     }

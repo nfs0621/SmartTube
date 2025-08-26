@@ -35,11 +35,13 @@ public class GeminiClient {
             this.source = source;
         }
     }
-    private static final String MODEL = "gemini-2.5-flash";
-    private static final String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent?key=";
+    private static final String MODEL = "gemini-2.0-flash-exp"; // Optimized for lower latency
+    private static final String FALLBACK_MODEL = "gemini-2.5-flash";
+    private static final String API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=";
     private final String apiKey;
     private final String prefLang;
     private final boolean debug;
+    private String lastUsedModel;
 
     public GeminiClient(Context context) {
         this.apiKey = loadApiKey(context);
@@ -51,46 +53,100 @@ public class GeminiClient {
     public boolean isConfigured() {
         return !TextUtils.isEmpty(apiKey);
     }
+    
+    public String getLastUsedModel() {
+        return lastUsedModel != null ? lastUsedModel : MODEL;
+    }
 
     public String summarize(String title, String author, String videoId) throws IOException, JSONException {
         return summarize(title, author, videoId, "moderate");
     }
     
     public String summarize(String title, String author, String videoId, String detailLevel) throws IOException, JSONException {
+        return summarize(title, author, videoId, detailLevel, 0);
+    }
+
+    public String summarize(String title, String author, String videoId, String detailLevel, int startTimeSeconds) throws IOException, JSONException {
+        return summarize(title, author, videoId, detailLevel, startTimeSeconds, null);
+    }
+    
+    public String summarize(String title, String author, String videoId, String detailLevel, int startTimeSeconds, String forceMode) throws IOException, JSONException {
+        android.util.Log.d("GeminiClient", "=== GEMINI SUMMARIZE DEBUG ===");
+        android.util.Log.d("GeminiClient", "Title: " + title);
+        android.util.Log.d("GeminiClient", "Author: " + author);
+        android.util.Log.d("GeminiClient", "VideoID: " + videoId);
+        android.util.Log.d("GeminiClient", "DetailLevel: " + detailLevel);
+        android.util.Log.d("GeminiClient", "StartTime: " + startTimeSeconds);
+        
         if (TextUtils.isEmpty(apiKey)) {
             return "Gemini API key not set. Put API_KEY in assets/gemini.properties";
         }
-        
-        // Try to fetch transcript for more accurate summaries
-        String transcript = null;
-        String transcriptSource = null;
-        try {
-            TranscriptResult result = fetchTranscriptWithSource(videoId);
-            transcript = result.transcript;
-            transcriptSource = result.source;
-        } catch (Exception e) {
-            // Transcript fetch failed, continue with title-only summary
-            android.util.Log.w("GeminiClient", "Could not fetch transcript for " + videoId + ": " + e.getMessage());
-        }
-        
-        boolean officialAvailable = hasOfficialTrack(videoId);
-        String prompt = buildPrompt(title, author, videoId, detailLevel, transcript, transcriptSource, officialAvailable);
-        try {
-            return callGemini(prompt);
-        } catch (IOException e) {
-            // Fallback: chunked summarization to avoid timeouts on huge transcripts
-            if (!TextUtils.isEmpty(transcript)) {
-                String[] chunks = splitTranscript(transcript, 12000);
-                StringBuilder partials = new StringBuilder();
-                for (int i = 0; i < chunks.length; i++) {
-                    String chunkPrompt = buildPrompt(title + " (chunk " + (i+1) + "/" + chunks.length + ")", author, videoId, detailLevel, chunks[i], transcriptSource, officialAvailable);
-                    String part = callGemini(chunkPrompt);
-                    partials.append("\n[Chunk ").append(i+1).append("]\n").append(part).append("\n");
-                }
-                String combine = "Summarize the following partial summaries into a single cohesive summary with the same format and header requirements.\n\n" + partials;
-                return callGemini(combine);
+
+        // Mode selection: URL (Gemini watches video) vs Transcript/CC
+        String mode = forceMode != null ? forceMode : com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData
+                .instance(com.liskovsoft.youtubeapi.app.AppService.instance().getContext())
+                .getMode();
+        android.util.Log.d("GeminiClient", "Mode: " + mode + (forceMode != null ? " (forced)" : " (from settings)"));
+        if (!TextUtils.isEmpty(mode) && "transcript".equalsIgnoreCase(mode)) {
+            // Transcript/CC method (previous behavior)
+            String transcript = null;
+            String transcriptSource = null;
+            try {
+                TranscriptResult result = fetchTranscriptWithSource(videoId);
+                transcript = result.transcript;
+                transcriptSource = result.source;
+            } catch (Exception e) {
+                android.util.Log.w("GeminiClient", "Could not fetch transcript for " + videoId + ": " + e.getMessage());
             }
-            throw e;
+
+            boolean officialAvailable = hasOfficialTrack(videoId);
+            String prompt = buildPrompt(title, author, videoId, detailLevel, transcript, transcriptSource, officialAvailable);
+            try {
+                return callGemini(prompt);
+            } catch (IOException e) {
+                if (!TextUtils.isEmpty(transcript)) {
+                    String[] chunks = splitTranscript(transcript, 12000);
+                    StringBuilder partials = new StringBuilder();
+                    for (int i = 0; i < chunks.length; i++) {
+                        String chunkPrompt = buildPrompt(title + " (chunk " + (i+1) + "/" + chunks.length + ")", author, videoId, detailLevel, chunks[i], transcriptSource, officialAvailable);
+                        String part = callGemini(chunkPrompt);
+                        partials.append("\n[Chunk ").append(i+1).append("]\n").append(part).append("\n");
+                    }
+                    String combine = "Summarize the following partial summaries into a single cohesive summary with the same format and header requirements.\n\n" + partials;
+                    return callGemini(combine);
+                }
+                throw e;
+            }
+        } else {
+            // URL mode: ask Gemini 2.5 Flash to watch the YouTube URL directly
+            android.util.Log.d("GeminiClient", "Using URL mode");
+            String watchUrl = "";
+            if (!TextUtils.isEmpty(videoId)) {
+                StringBuilder url = new StringBuilder("https://www.youtube.com/watch?v=").append(videoId);
+                if (startTimeSeconds > 0) url.append("&t=").append(startTimeSeconds).append('s');
+                watchUrl = url.toString();
+                android.util.Log.d("GeminiClient", "Constructed URL: " + watchUrl);
+            } else {
+                android.util.Log.w("GeminiClient", "VideoID is empty or null!");
+                return "Error: No video ID provided";
+            }
+            String prompt;
+            String lvl = detailLevel != null ? detailLevel.toLowerCase() : "moderate";
+            switch (lvl) {
+                case "concise":
+                    prompt = "Provide a short summary of this video.";
+                    break;
+                case "detailed":
+                    prompt = "Provide the most detailed summary of this video, including visual and auditory information.";
+                    break;
+                case "moderate":
+                default:
+                    prompt = "Provide a detailed summary of this video with key topics and timestamps.";
+                    break;
+            }
+            // Use proper API structure: pass URL as fileData, not in text prompt
+            android.util.Log.d("GeminiClient", "Sending URL as fileData to Gemini API");
+            return callGemini(prompt, watchUrl);
         }
     }
 
@@ -655,19 +711,57 @@ public class GeminiClient {
     }
 
     private String callGemini(String prompt) throws IOException, JSONException {
+        return callGemini(prompt, null);
+    }
+    
+    private String callGemini(String prompt, String videoUrl) throws IOException, JSONException {
+        // Try fast model first, then fallback
+        try {
+            return callGeminiWithModel(prompt, videoUrl, MODEL);
+        } catch (IOException e) {
+            android.util.Log.w("GeminiClient", "Fast model failed, trying fallback: " + e.getMessage());
+            return callGeminiWithModel(prompt, videoUrl, FALLBACK_MODEL);
+        }
+    }
+    
+    private String callGeminiWithModel(String prompt, String videoUrl, String model) throws IOException, JSONException {
+        long startTime = System.currentTimeMillis();
+        android.util.Log.d("GeminiClient", "Starting Gemini API call with model " + model + " at: " + startTime);
+        
         JSONObject req = new JSONObject();
-        JSONArray parts = new JSONArray().put(new JSONObject().put("text", prompt));
+        JSONArray parts = new JSONArray();
+        
+        // OPTIMIZATION: Add video URL FIRST, then text (as recommended by Google)
+        if (videoUrl != null && !TextUtils.isEmpty(videoUrl)) {
+            JSONObject fileData = new JSONObject();
+            fileData.put("fileUri", videoUrl);
+            parts.put(new JSONObject().put("fileData", fileData));
+            android.util.Log.d("GeminiClient", "Using optimized fileData approach for URL: " + videoUrl);
+        }
+        
+        // Add text prompt AFTER video
+        parts.put(new JSONObject().put("text", prompt));
+        
         JSONObject content = new JSONObject().put("parts", parts);
         req.put("contents", new JSONArray().put(content));
+        android.util.Log.d("GeminiClient", "Optimized request JSON: " + req.toString());
 
         byte[] payload = req.toString().getBytes(StandardCharsets.UTF_8);
 
-        HttpURLConnection conn = (HttpURLConnection) new URL(API_URL + apiKey).openConnection();
+        String apiUrl = String.format(API_URL_TEMPLATE, model) + apiKey;
+        HttpURLConnection conn = (HttpURLConnection) new URL(apiUrl).openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
         conn.setDoOutput(true);
-        conn.setConnectTimeout(30000);
-        conn.setReadTimeout(90000);
+        
+        // Aggressive timeouts for faster model, longer for fallback
+        if (MODEL.equals(model)) {
+            conn.setConnectTimeout(15000);  // 15s for fast model
+            conn.setReadTimeout(45000);     // 45s for fast model
+        } else {
+            conn.setConnectTimeout(30000);  // 30s for fallback
+            conn.setReadTimeout(120000);    // 2min for fallback
+        }
         try (OutputStream os = conn.getOutputStream()) {
             os.write(payload);
         }
@@ -678,6 +772,11 @@ public class GeminiClient {
         if (code < 200 || code >= 300) {
             throw new IOException("Gemini HTTP " + code + ":\n" + resp);
         }
+        
+        long endTime = System.currentTimeMillis();
+        long duration = endTime - startTime;
+        android.util.Log.d("GeminiClient", "Gemini API call completed in: " + duration + "ms");
+        
         JSONObject json = new JSONObject(resp);
         JSONArray candidates = json.optJSONArray("candidates");
         if (candidates != null && candidates.length() > 0) {
@@ -686,10 +785,14 @@ public class GeminiClient {
             if (contentResp != null) {
                 JSONArray partsResp = contentResp.optJSONArray("parts");
                 if (partsResp != null && partsResp.length() > 0) {
-                    return partsResp.getJSONObject(0).optString("text", resp);
+                    String summaryText = partsResp.getJSONObject(0).optString("text", resp);
+                    // Store the model used for this response
+                    lastUsedModel = model;
+                    return summaryText;
                 }
             }
         }
+        lastUsedModel = model;
         return resp;
     }
 

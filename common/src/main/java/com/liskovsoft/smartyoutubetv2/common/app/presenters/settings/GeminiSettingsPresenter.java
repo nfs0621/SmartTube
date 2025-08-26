@@ -57,6 +57,17 @@ public class GeminiSettingsPresenter {
             opt -> data.setDetailLevel("detailed"), "detailed".equals(currentLevel)));
         dlg.appendRadioCategory(context.getString(R.string.gemini_detail_level_title), detailLevels);
 
+        // Source mode setting
+        List<OptionItem> modes = new ArrayList<>();
+        String currentMode = data.getMode();
+        modes.add(UiOptionItem.from(context.getString(R.string.gemini_source_mode_url),
+                opt -> data.setMode("url"),
+                "url".equalsIgnoreCase(currentMode)));
+        modes.add(UiOptionItem.from(context.getString(R.string.gemini_source_mode_transcript),
+                opt -> data.setMode("transcript"),
+                "transcript".equalsIgnoreCase(currentMode)));
+        dlg.appendRadioCategory(context.getString(R.string.gemini_source_mode_title), modes);
+
         // Transcript content size / tokens
         List<OptionItem> sizes = new ArrayList<>();
         int currentMax = data.getMaxTranscriptChars();

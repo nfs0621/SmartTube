@@ -47,16 +47,12 @@ public class VideoSummaryOverlay {
                 if (event.getAction() == KeyEvent.ACTION_DOWN) {
                     int keyCode = event.getKeyCode();
                     
-                    // Close overlay on back, left, or right
+                    // Close overlay on back, left, right, or center/enter (OK button functionality removed)
                     if (keyCode == KeyEvent.KEYCODE_BACK || 
                         keyCode == KeyEvent.KEYCODE_DPAD_LEFT || 
-                        keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-                        hide();
-                        return true;
-                    } 
-                    // Confirm mark-as-watched on OK/Enter
-                    else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
-                        if (onConfirmListener != null) onConfirmListener.onConfirm();
+                        keyCode == KeyEvent.KEYCODE_DPAD_RIGHT ||
+                        keyCode == KeyEvent.KEYCODE_DPAD_CENTER || 
+                        keyCode == KeyEvent.KEYCODE_ENTER) {
                         hide();
                         return true;
                     }

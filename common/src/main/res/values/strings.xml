@@ -717,4 +717,7 @@
     <string name="gemini_detail_level_concise">Concise</string>
     <string name="gemini_detail_level_moderate">Moderate</string>
     <string name="gemini_detail_level_detailed">Detailed</string>
+    <string name="gemini_source_mode_title">Summary Source</string>
+    <string name="gemini_source_mode_url">Ask Gemini to watch video (URL)</string>
+    <string name="gemini_source_mode_transcript">Use Transcript/Closed Captions</string>
 </resources>

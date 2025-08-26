@@ -10,6 +10,7 @@ public class GeminiData {
     private static final String KEY_LANG = "gemini_lang";
     private static final String KEY_DEBUG = "gemini_debug";
     private static final String KEY_MAX_CHARS = "gemini_max_chars";
+    private static final String KEY_MODE = "gemini_mode"; // "url" or "transcript"
     @SuppressLint("StaticFieldLeak")
     private static GeminiData sInstance;
     private final AppPrefs mPrefs;
@@ -72,6 +73,17 @@ public class GeminiData {
 
     public void setMaxTranscriptChars(int max) {
         mPrefs.putInt(KEY_MAX_CHARS, max);
+    }
+
+    /**
+     * Summary source mode: "url" (Gemini watches the video via URL) or "transcript" (use CC/transcript).
+     */
+    public String getMode() {
+        return mPrefs.getString(KEY_MODE, "url");
+    }
+
+    public void setMode(String mode) {
+        mPrefs.putString(KEY_MODE, mode);
     }
 }
 

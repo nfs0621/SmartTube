@@ -61,7 +61,7 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
         mCardPresenter = isShorts() ? new ShortsCardPresenter() : new VideoCardPresenter();
         mBackgroundManager = ((LeanbackActivity) getActivity()).getBackgroundManager();
         mVideoGridScale = MainUIData.instance(getActivity()).getVideoGridScale();
-        mSummaryOverlay = new VideoSummaryOverlay(getActivity());
+        // Don't initialize overlay here - create only when needed to avoid persistent display
         mGemini = new GeminiClient(getContext());
 
         setupAdapter();
@@ -298,7 +298,8 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
 
                 checkScrollEnd((Video) item);
 
-                scheduleSummary((Video) item);
+                // Auto-timer disabled temporarily - focus on manual summaries
+                // scheduleSummary((Video) item);
             }
         }
 
@@ -353,6 +354,14 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
 
     private void triggerSummary(Video video) {
         android.util.Log.d(TAG, "triggerSummary called for: " + (video != null ? video.title : "null"));
+        if (video != null) {
+            android.util.Log.d(TAG, "=== VIDEO DEBUG INFO ===");
+            android.util.Log.d(TAG, "Video Title: " + video.title);
+            android.util.Log.d(TAG, "Video Author: " + video.author);
+            android.util.Log.d(TAG, "Video ID: " + video.videoId);
+            android.util.Log.d(TAG, "Video startTimeSeconds: " + video.startTimeSeconds);
+            android.util.Log.d(TAG, "========================");
+        }
         if (video == null || getActivity() == null) {
             android.util.Log.d(TAG, "triggerSummary aborted - video is null: " + (video == null) + ", activity is null: " + (getActivity() == null));
             return;
@@ -372,8 +381,11 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
                         com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
                     String detailLevel = geminiData.getDetailLevel();
                     android.util.Log.d(TAG, "Using detail level: " + detailLevel);
-                    body = mGemini.summarize(video.title, video.author, video.videoId, detailLevel);
+                    int startSec = Math.max(0, video.startTimeSeconds);
+                    body = mGemini.summarize(video.title, video.author, video.videoId, detailLevel, startSec);
                     android.util.Log.d(TAG, "Gemini API response received, length: " + body.length());
+                    // Update title to include model used
+                    title = "Gemini Summary [" + mGemini.getLastUsedModel() + "]";
                 } else {
                     body = "Gemini API key not configured.\n\nAdd it to assets/gemini.properties (API_KEY=...).";
                     android.util.Log.d(TAG, "Gemini API not configured");
@@ -391,6 +403,9 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
                     try {
                         com.liskovsoft.smartyoutubetv2.common.app.models.data.Video v = video;
                         if (v != null && v.hasVideo()) {
+                            // Show toast FIRST with longer duration and better visibility
+                            android.widget.Toast.makeText(getContext(), "✓ " + getString(R.string.mark_as_watched), android.widget.Toast.LENGTH_LONG).show();
+                            
                             com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.instance().updateHistory(v, 0);
                             v.markFullyViewed();
                             com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).save(
@@ -398,9 +413,11 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
                             );
                             com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).persistState();
                             com.liskovsoft.smartyoutubetv2.common.app.models.data.Playlist.instance().sync(v);
-                            android.widget.Toast.makeText(getContext(), getString(R.string.mark_as_watched), android.widget.Toast.LENGTH_SHORT).show();
+                            android.util.Log.d(TAG, "Video marked as watched: " + v.title);
                         }
-                    } catch (Throwable ignored) {}
+                    } catch (Throwable e) {
+                        android.util.Log.e(TAG, "Error marking video as watched: " + e.getMessage());
+                    }
                 });
                 mSummaryOverlay.showText(fTitle, fBody);
             });

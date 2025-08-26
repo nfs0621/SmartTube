@@ -51,6 +51,13 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
     private ShortsCardPresenter mShortsPresenter;
     private int mSelectedRowIndex = -1;
     private ChannelHeaderCallback mChannelHeaderCallback;
+    
+    // Gemini auto-summary support
+    private android.os.Handler mSummaryHandler;
+    private Runnable mSummaryRunnable;
+    private com.liskovsoft.smartyoutubetv2.common.app.models.data.Video mPendingSummaryVideo;
+    private com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient mGemini;
+    private com.liskovsoft.smartyoutubetv2.common.ui.summary.VideoSummaryOverlay mSummaryOverlay;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -60,6 +67,11 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
         mCardPresenter = new VideoCardPresenter();
         mShortsPresenter = new ShortsCardPresenter();
         mBackgroundManager = ((LeanbackActivity) getActivity()).getBackgroundManager();
+
+        // Initialize Gemini support
+        mSummaryHandler = new android.os.Handler();
+        mGemini = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
+        // Don't initialize overlay here - create only when needed to avoid persistent display
 
         setupAdapter();
         setupEventListeners();
@@ -363,6 +375,9 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
                 mMainPresenter.onVideoItemSelected((Video) item);
 
                 checkScrollEnd((Video)item);
+                
+                // Auto-timer disabled temporarily - focus on manual summaries
+                // scheduleSummary((Video) item);
             }
         }
 
@@ -379,5 +394,116 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
                 }
             }
         }
+    }
+    
+    // Gemini auto-summary methods (copied from VideoGridFragment)
+    private void scheduleSummary(Video video) {
+        // Cancel previous
+        if (mSummaryRunnable != null) {
+            android.util.Log.d(TAG, "Cancelling previous Gemini summary timer");
+            mSummaryHandler.removeCallbacks(mSummaryRunnable);
+            mSummaryRunnable = null;
+        }
+        
+        // Check if video is null or same as previous
+        if (video == null) {
+            android.util.Log.d(TAG, "Not scheduling summary - video is null");
+            return;
+        }
+        
+        // Check settings
+        com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
+        if (!gd.isEnabled()) {
+            android.util.Log.d(TAG, "Gemini summaries disabled in settings");
+            return;
+        }
+        
+        // Don't reschedule for same video
+        if (mPendingSummaryVideo != null && video.equals(mPendingSummaryVideo)) {
+            android.util.Log.d(TAG, "Not rescheduling - same video already pending: " + video.title);
+            return;
+        }
+        
+        int delay = gd.getDelayMs();
+        android.util.Log.d(TAG, "Scheduling Gemini summary for: " + video.title + " with delay: " + delay + "ms");
+        mPendingSummaryVideo = video;
+        final Video capturedVideo = video; // Capture the video to avoid race conditions
+        mSummaryRunnable = () -> {
+            android.util.Log.d(TAG, "Timer triggered - calling triggerSummary for: " + capturedVideo.title);
+            triggerSummary(capturedVideo);
+        };
+        mSummaryHandler.postDelayed(mSummaryRunnable, delay);
+    }
+
+    private void triggerSummary(Video video) {
+        android.util.Log.d(TAG, "triggerSummary called for: " + (video != null ? video.title : "null"));
+        if (video != null) {
+            android.util.Log.d(TAG, "=== VIDEO DEBUG INFO ===");
+            android.util.Log.d(TAG, "Video Title: " + video.title);
+            android.util.Log.d(TAG, "Video Author: " + video.author);
+            android.util.Log.d(TAG, "Video ID: " + video.videoId);
+            android.util.Log.d(TAG, "Video startTimeSeconds: " + video.startTimeSeconds);
+            android.util.Log.d(TAG, "========================");
+        }
+        if (video == null || getActivity() == null) {
+            android.util.Log.d(TAG, "triggerSummary aborted - video is null: " + (video == null) + ", activity is null: " + (getActivity() == null));
+            return;
+        }
+
+        mSummaryRunnable = null; // Clear the runnable since it's now executing
+        mPendingSummaryVideo = null;
+
+        new Thread(() -> {
+            String body;
+            String title = "Gemini Summary";
+            try {
+                android.util.Log.d(TAG, "Gemini API configured: " + (mGemini != null && mGemini.isConfigured()));
+                if (mGemini != null && mGemini.isConfigured()) {
+                    android.util.Log.d(TAG, "Calling Gemini API for video: " + video.title);
+                    com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData geminiData = 
+                        com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
+                    String detailLevel = geminiData.getDetailLevel();
+                    android.util.Log.d(TAG, "Using detail level: " + detailLevel);
+                    int startSec = Math.max(0, video.startTimeSeconds);
+                    body = mGemini.summarize(video.title, video.author, video.videoId, detailLevel, startSec);
+                    android.util.Log.d(TAG, "Gemini API response received, length: " + body.length());
+                    // Update title to include model used
+                    title = "Gemini Summary [" + mGemini.getLastUsedModel() + "]";
+                } else {
+                    body = "Gemini API key not configured.\n\nAdd it to assets/gemini.properties (API_KEY=...).";
+                    android.util.Log.d(TAG, "Gemini API not configured");
+                }
+            } catch (Exception e) {
+                body = "Failed to get summary:\n" + e.getMessage();
+                android.util.Log.e(TAG, "Gemini API error: " + e.getMessage(), e);
+            }
+            final String fBody = body;
+            final String fTitle = title;
+            if (getActivity() == null) return;
+            android.util.Log.d(TAG, "Updating UI with Gemini summary");
+            getActivity().runOnUiThread(() -> {
+                mSummaryOverlay.setOnConfirmListener(() -> {
+                    try {
+                        com.liskovsoft.smartyoutubetv2.common.app.models.data.Video v = video;
+                        if (v != null && v.hasVideo()) {
+                            // Show toast FIRST with longer duration and better visibility
+                            android.widget.Toast.makeText(getContext(), "✓ " + getContext().getString(com.liskovsoft.smartyoutubetv2.common.R.string.mark_as_watched), android.widget.Toast.LENGTH_LONG).show();
+                            
+                            com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.instance().updateHistory(v, 0);
+                            v.markFullyViewed();
+                            com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).save(
+                                    new com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.State(v, v.getDurationMs())
+                            );
+                            com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).persistState();
+                            com.liskovsoft.smartyoutubetv2.common.app.models.data.Playlist.instance().sync(v);
+                            android.util.Log.d(TAG, "Video marked as watched: " + v.title);
+                        }
+                    } catch (Throwable e) {
+                        android.util.Log.e(TAG, "Error marking video as watched: " + e.getMessage());
+                    }
+                });
+                mSummaryOverlay.showText(fTitle, fBody);
+            });
+        }).start();
     }
 }

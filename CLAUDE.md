@@ -140,22 +140,43 @@ Variants have separate resource folders:
 ## Gemini AI Features
 
 ### Manual Gemini Summary
-- Accessible via long-press context menu → "Gemini Summary"
-- Located at top of context menu (see `MainUIData.MENU_ITEM_DEFAULT_ORDER`)
-- Requires API key in `assets/gemini.properties`
-- Shows source identification: `[Detail Level: X] [Source: Y]`
+- Accessible via long-press context menu → "Gemini Summary" (top entry per `MainUIData.MENU_ITEM_DEFAULT_ORDER`).
+- Requires API key in `assets/gemini.properties`.
+- Header shows: `[Detail Level: X] [Source: Y] [Official CC Available: Yes/No]`.
+- Overlay controls: `OK` marks watched, `Up/Down` scroll, `Left/Right/Back` close.
 
 ### Auto Gemini Summary Timer
-- Configured in `VideoGridFragment.scheduleSummary()`
-- Triggers after user hovers on video for set delay (3s/5s/8s)
-- Debug logging available: `adb logcat -s VideoGridFragment:D`
-- Common issues: rapid navigation, lifecycle events, missing API key
+- Configured in `VideoGridFragment.scheduleSummary()`.
+- Triggers after user hovers on a video for the set delay (3s/5s/8s).
+- Overlay controls identical to manual summary (OK marks watched, etc.).
+- Debug logging: `adb logcat -s VideoGridFragment:D`.
+- Common issues: rapid navigation, lifecycle events, missing API key.
 
 ### Implementation Details
-- Transcript Fetching: Official captions → auto-generated fallback
-- Detail Levels: Concise/Moderate/Detailed configurable
-- UI Navigation: D‑pad left/right/back closes summary overlay
-- Error Handling: Graceful fallback to title/metadata if transcript unavailable
+- Transcript pipeline (best → fallback):
+  1) InnerTube `get_transcript` (robust, no scraping)
+  2) Player captions via `VideoInfoApi` (prefer Official EN → Auto EN → first available)
+  3) Watch page `captionTracks` (consent bypass, EN locale)
+  4) `timedtext` endpoint (`fmt=vtt`/`json3`/XML)
+- Preferred transcript language: English by default; requests EN translations where possible (`tlang=en`).
+- Header shows whether an official track exists even if a fallback is used.
+- Detail Levels: Concise / Moderate / Detailed.
+- Overlay controls: `OK` marks watched; `Up/Down` scroll; `Left/Right/Back` close.
+- Long videos: Increased timeouts and automatic chunked summarization for very large transcripts (summarize chunks, then combine).
+- Error handling: Graceful fallback to title/metadata if transcript unavailable.
+
+### Gemini Settings (in‑app)
+- Enable Summaries: toggle on/off.
+- Summary Delay: 3s / 5s / 8s.
+- Detail Level: Concise / Moderate / Detailed.
+- Transcript Length: Full transcript (default) / ~4k chars / ~12k chars.
+- Preferred Transcript Language: English.
+- Verbose Logging: off by default; enable for detailed diagnostics.
+
+### Mark as Watched (overlay)
+- Press `OK` (DPAD Center/Enter) on the summary overlay to mark the video as watched.
+- This updates history (`updateHistory(video, 0)`), marks fully viewed, saves/persists state, and syncs the playlist.
+- A short toast confirms the action.
 
 ## Development Workflow
 
@@ -203,4 +224,3 @@ Then wire these into `signingConfigs` in `smarttubetv/build.gradle` and run:
 - Git Submodules: Run `git submodule update --init --recursive` after cloning.
 - Version Control: Always increment version numbers for new builds.
 - APK Distribution: Only distribute through official channels, never app stores.
-

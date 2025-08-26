@@ -483,9 +483,11 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
 
         mDialogPresenter.appendSingleButton(
                 UiOptionItem.from(getContext().getString(R.string.mark_as_watched), optionItem -> {
-                    MediaServiceManager.instance().updateHistory(mVideo, 0);
+                    // Use video duration instead of 0 to mark as fully watched in history
+                    long durationMs = mVideo.getDurationMs() > 0 ? mVideo.getDurationMs() : 1000;
+                    MediaServiceManager.instance().updateHistory(mVideo, durationMs);
                     mVideo.markFullyViewed();
-                    VideoStateService.instance(getContext()).save(new State(mVideo, mVideo.getDurationMs()));
+                    VideoStateService.instance(getContext()).save(new State(mVideo, durationMs));
                     Playlist.instance().sync(mVideo);
                     mDialogPresenter.closeDialog();
                 }));
@@ -1024,14 +1026,16 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                         try {
                             com.liskovsoft.smartyoutubetv2.common.app.models.data.Video v = video;
                             if (v != null && v.hasVideo()) {
-                                com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.instance().updateHistory(v, 0);
+                                // Use video duration instead of 0 to mark as fully watched in history
+                                long durationMs = v.getDurationMs() > 0 ? v.getDurationMs() : 1000; // Default to 1 second if duration unknown
+                                com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.instance().updateHistory(v, durationMs);
                                 v.markFullyViewed();
                                 com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).save(
-                                        new com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.State(v, v.getDurationMs())
+                                        new com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.State(v, durationMs)
                                 );
                                 com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).persistState();
                                 com.liskovsoft.smartyoutubetv2.common.app.models.data.Playlist.instance().sync(v);
-                                android.util.Log.d("VideoMenuPresenter", "Video auto-marked as watched: " + v.title);
+                                android.util.Log.d("VideoMenuPresenter", "Video auto-marked as watched with duration " + durationMs + "ms: " + v.title);
                                 
                                 // Show toast notification on UI thread
                                 activity.runOnUiThread(() -> {

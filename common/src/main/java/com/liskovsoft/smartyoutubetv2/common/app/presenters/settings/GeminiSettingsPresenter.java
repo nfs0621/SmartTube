@@ -68,6 +68,29 @@ public class GeminiSettingsPresenter {
                 "transcript".equalsIgnoreCase(currentMode)));
         dlg.appendRadioCategory(context.getString(R.string.gemini_source_mode_title), modes);
 
+        // AI Model selection
+        List<OptionItem> models = new ArrayList<>();
+        String currentModel = data.getModel();
+        models.add(UiOptionItem.from("Auto (2.0-flash-exp → 2.5-flash fallback)", 
+                opt -> data.setModel("auto"), 
+                "auto".equals(currentModel)));
+        models.add(UiOptionItem.from("Gemini 2.0 Flash Experimental", 
+                opt -> data.setModel("gemini-2.0-flash-exp"), 
+                "gemini-2.0-flash-exp".equals(currentModel)));
+        models.add(UiOptionItem.from("Gemini 2.5 Flash", 
+                opt -> data.setModel("gemini-2.5-flash"), 
+                "gemini-2.5-flash".equals(currentModel)));
+        models.add(UiOptionItem.from("Gemini 1.5 Flash", 
+                opt -> data.setModel("gemini-1.5-flash"), 
+                "gemini-1.5-flash".equals(currentModel)));
+        models.add(UiOptionItem.from("Gemini 1.5 Pro", 
+                opt -> data.setModel("gemini-1.5-pro"), 
+                "gemini-1.5-pro".equals(currentModel)));
+        models.add(UiOptionItem.from("Gemini 1.0 Pro", 
+                opt -> data.setModel("gemini-1.0-pro"), 
+                "gemini-1.0-pro".equals(currentModel)));
+        dlg.appendRadioCategory("AI Model", models);
+
         // Transcript content size / tokens
         List<OptionItem> sizes = new ArrayList<>();
         int currentMax = data.getMaxTranscriptChars();

@@ -11,6 +11,7 @@ public class GeminiData {
     private static final String KEY_DEBUG = "gemini_debug";
     private static final String KEY_MAX_CHARS = "gemini_max_chars";
     private static final String KEY_MODE = "gemini_mode"; // "url" or "transcript"
+    private static final String KEY_MODEL = "gemini_model"; // model selection
     @SuppressLint("StaticFieldLeak")
     private static GeminiData sInstance;
     private final AppPrefs mPrefs;
@@ -84,6 +85,18 @@ public class GeminiData {
 
     public void setMode(String mode) {
         mPrefs.putString(KEY_MODE, mode);
+    }
+
+    /**
+     * Gemini AI model selection.
+     * Options: "auto", "gemini-2.0-flash-exp", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"
+     */
+    public String getModel() {
+        return mPrefs.getString(KEY_MODEL, "auto");
+    }
+
+    public void setModel(String model) {
+        mPrefs.putString(KEY_MODEL, model);
     }
 }
 

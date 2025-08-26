@@ -406,7 +406,9 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
                             // Show toast FIRST with longer duration and better visibility
                             android.widget.Toast.makeText(getContext(), "✓ " + getString(R.string.mark_as_watched), android.widget.Toast.LENGTH_LONG).show();
                             
-                            com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.instance().updateHistory(v, 0);
+                            // Use video duration instead of 0 to mark as fully watched in history
+                            long durationMs = v.getDurationMs() > 0 ? v.getDurationMs() : 1000; // Default to 1 second if duration unknown
+                            com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.instance().updateHistory(v, durationMs);
                             v.markFullyViewed();
                             com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).save(
                                     new com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.State(v, v.getDurationMs())

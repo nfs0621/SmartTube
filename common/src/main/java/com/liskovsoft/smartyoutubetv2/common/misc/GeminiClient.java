@@ -715,12 +715,25 @@ public class GeminiClient {
     }
     
     private String callGemini(String prompt, String videoUrl) throws IOException, JSONException {
-        // Try fast model first, then fallback
-        try {
-            return callGeminiWithModel(prompt, videoUrl, MODEL);
-        } catch (IOException e) {
-            android.util.Log.w("GeminiClient", "Fast model failed, trying fallback: " + e.getMessage());
-            return callGeminiWithModel(prompt, videoUrl, FALLBACK_MODEL);
+        // Check user's model preference from settings
+        String userModel = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData
+                .instance(com.liskovsoft.youtubeapi.app.AppService.instance().getContext())
+                .getModel();
+        
+        android.util.Log.d("GeminiClient", "User selected model: " + userModel);
+        
+        if ("auto".equals(userModel)) {
+            // Auto mode: Try fast model first, then fallback
+            try {
+                return callGeminiWithModel(prompt, videoUrl, MODEL);
+            } catch (IOException e) {
+                android.util.Log.w("GeminiClient", "Fast model failed, trying fallback: " + e.getMessage());
+                return callGeminiWithModel(prompt, videoUrl, FALLBACK_MODEL);
+            }
+        } else {
+            // Use specific model selected by user - no fallback
+            android.util.Log.d("GeminiClient", "Using user-selected model (no fallback): " + userModel);
+            return callGeminiWithModel(prompt, videoUrl, userModel);
         }
     }
     

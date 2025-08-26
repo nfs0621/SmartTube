@@ -29,6 +29,8 @@ public class GeminiSettingsPresenter {
         // Enable/disable
         List<OptionItem> enabled = new ArrayList<>();
         enabled.add(UiOptionItem.from(context.getString(R.string.gemini_enable_summaries), opt -> data.setEnabled(opt.isSelected()), data.isEnabled()));
+        enabled.add(UiOptionItem.from("Fact check summaries (uses web search)", opt -> data.setFactCheckEnabled(opt.isSelected()), data.isFactCheckEnabled()));
+        enabled.add(UiOptionItem.from("Auto mark as watched on summary", opt -> data.setMarkAsWatchedEnabled(opt.isSelected()), data.isMarkAsWatchedEnabled()));
         dlg.appendCheckedCategory(context.getString(R.string.gemini_category_title), enabled);
 
         // Delay options

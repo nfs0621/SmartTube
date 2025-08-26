@@ -102,7 +102,8 @@ public class GeminiClient {
             boolean officialAvailable = hasOfficialTrack(videoId);
             String prompt = buildPrompt(title, author, videoId, detailLevel, transcript, transcriptSource, officialAvailable);
             try {
-                return callGemini(prompt);
+                String summary = callGemini(prompt);
+                return appendFactCheckIfEnabled(summary, title, author, videoId);
             } catch (IOException e) {
                 if (!TextUtils.isEmpty(transcript)) {
                     String[] chunks = splitTranscript(transcript, 12000);
@@ -113,7 +114,8 @@ public class GeminiClient {
                         partials.append("\n[Chunk ").append(i+1).append("]\n").append(part).append("\n");
                     }
                     String combine = "Summarize the following partial summaries into a single cohesive summary with the same format and header requirements.\n\n" + partials;
-                    return callGemini(combine);
+                    String summary = callGemini(combine);
+                    return appendFactCheckIfEnabled(summary, title, author, videoId);
                 }
                 throw e;
             }
@@ -146,7 +148,8 @@ public class GeminiClient {
             }
             // Use proper API structure: pass URL as fileData, not in text prompt
             android.util.Log.d("GeminiClient", "Sending URL as fileData to Gemini API");
-            return callGemini(prompt, watchUrl);
+            String summary = callGemini(prompt, watchUrl);
+            return appendFactCheckIfEnabled(summary, title, author, videoId);
         }
     }
 
@@ -164,13 +167,13 @@ public class GeminiClient {
                 sb.append("Keep it VERY brief - maximum 2-3 bullet points. Focus only on the main topic and key takeaway.\n");
                 break;
             case "detailed":
-                sb.append("Provide a comprehensive summary with multiple bullet points.\n");
-                sb.append("Include: detailed topic overview, key takeaways, target audience, main points covered, and any important conclusions.\n");
+                sb.append("Provide: a comprehensive summary with multiple bullet points.\n");
+                sb.append("Include: detailed topic overview, main points covered, key takeaways, and any important conclusions.\n");
                 break;
             case "moderate":
             default:
                 sb.append("Use bullet points and short paragraphs.\n");
-                sb.append("Include: topic, key takeaways, who it's for.\n");
+                sb.append("Include: topic, key takeaways, punchline (if it's a review or list or clickbait type video).\n");
                 break;
         }
         
@@ -820,6 +823,102 @@ public class GeminiClient {
             out[i] = transcript.substring(pos, end);
         }
         return out;
+    }
+
+    private String appendFactCheckIfEnabled(String summary, String title, String author, String videoId) {
+        try {
+            com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = 
+                    com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(
+                            com.liskovsoft.youtubeapi.app.AppService.instance().getContext());
+            
+            if (!gd.isFactCheckEnabled()) {
+                android.util.Log.d("GeminiClient", "Fact checking disabled, returning summary as-is");
+                return summary;
+            }
+
+            android.util.Log.d("GeminiClient", "Fact checking enabled, performing web search fact check");
+            
+            String factCheck = performFactCheck(summary, title, author, videoId);
+            if (!TextUtils.isEmpty(factCheck)) {
+                return summary + "\n\n" + factCheck;
+            }
+            return summary;
+        } catch (Exception e) {
+            android.util.Log.w("GeminiClient", "Fact check failed: " + e.getMessage());
+            return summary;
+        }
+    }
+
+    private String performFactCheck(String summary, String title, String author, String videoId) throws IOException, JSONException {
+        android.util.Log.d("GeminiClient", "Starting fact check for: " + title);
+        
+        String factCheckPrompt = "Fact-check the following video summary using web search. " +
+                "Focus on verifying key claims, statistics, dates, and factual assertions. " +
+                "Format your response as '**Fact Check Results:**' followed by bullet points indicating " +
+                "which claims were verified, any corrections needed, or if no verification was possible.\n\n" +
+                "Video: " + title + (author != null ? " by " + author : "") + "\n\n" +
+                "Summary to fact-check:\n" + summary;
+
+        return callGeminiWithWebSearch(factCheckPrompt);
+    }
+
+    private String callGeminiWithWebSearch(String prompt) throws IOException, JSONException {
+        String userModel = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData
+                .instance(com.liskovsoft.youtubeapi.app.AppService.instance().getContext())
+                .getModel();
+        
+        String model = "auto".equals(userModel) ? "gemini-2.0-flash-exp" : userModel;
+        
+        JSONObject req = new JSONObject();
+        JSONArray parts = new JSONArray();
+        parts.put(new JSONObject().put("text", prompt));
+        
+        JSONObject content = new JSONObject().put("parts", parts);
+        req.put("contents", new JSONArray().put(content));
+        
+        // Enable web search for fact checking
+        JSONObject tools = new JSONObject();
+        JSONArray toolsArray = new JSONArray();
+        JSONObject webSearchTool = new JSONObject();
+        webSearchTool.put("googleSearchRetrieval", new JSONObject());
+        toolsArray.put(webSearchTool);
+        req.put("tools", toolsArray);
+
+        byte[] payload = req.toString().getBytes(StandardCharsets.UTF_8);
+
+        String apiUrl = String.format(API_URL_TEMPLATE, model) + apiKey;
+        HttpURLConnection conn = (HttpURLConnection) new URL(apiUrl).openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+        conn.setDoOutput(true);
+        conn.setConnectTimeout(30000);
+        conn.setReadTimeout(60000);
+
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(payload);
+        }
+
+        int code = conn.getResponseCode();
+        InputStream is = code >= 200 && code < 300 ? conn.getInputStream() : conn.getErrorStream();
+        String resp = readAll(is);
+        if (code < 200 || code >= 300) {
+            android.util.Log.w("GeminiClient", "Fact check HTTP " + code + ": " + resp);
+            return null;
+        }
+
+        JSONObject json = new JSONObject(resp);
+        JSONArray candidates = json.optJSONArray("candidates");
+        if (candidates != null && candidates.length() > 0) {
+            JSONObject cand = candidates.getJSONObject(0);
+            JSONObject contentResp = cand.optJSONObject("content");
+            if (contentResp != null) {
+                JSONArray partsResp = contentResp.optJSONArray("parts");
+                if (partsResp != null && partsResp.length() > 0) {
+                    return partsResp.getJSONObject(0).optString("text", null);
+                }
+            }
+        }
+        return null;
     }
 }
 

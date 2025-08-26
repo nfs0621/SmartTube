@@ -399,11 +399,15 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
             if (getActivity() == null) return;
             android.util.Log.d(TAG, "Updating UI with Gemini summary");
             getActivity().runOnUiThread(() -> {
-                mSummaryOverlay.setOnConfirmListener(() -> {
-                    try {
-                        com.liskovsoft.smartyoutubetv2.common.app.models.data.Video v = video;
-                        if (v != null && v.hasVideo()) {
-                            // Show toast FIRST with longer duration and better visibility
+                // Automatically mark as watched when summary is shown (if enabled)
+                try {
+                    com.liskovsoft.smartyoutubetv2.common.app.models.data.Video v = video;
+                    if (v != null && v.hasVideo()) {
+                        com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData geminiData = 
+                                com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
+                        
+                        if (geminiData.isMarkAsWatchedEnabled()) {
+                            // Show toast when automatically marking as watched
                             android.widget.Toast.makeText(getContext(), "✓ " + getString(R.string.mark_as_watched), android.widget.Toast.LENGTH_LONG).show();
                             
                             // Use video duration instead of 0 to mark as fully watched in history
@@ -415,11 +419,18 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
                             );
                             com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).persistState();
                             com.liskovsoft.smartyoutubetv2.common.app.models.data.Playlist.instance().sync(v);
-                            android.util.Log.d(TAG, "Video marked as watched: " + v.title);
+                            android.util.Log.d(TAG, "Video automatically marked as watched: " + v.title);
+                        } else {
+                            android.util.Log.d(TAG, "Auto mark as watched disabled, skipping");
                         }
-                    } catch (Throwable e) {
-                        android.util.Log.e(TAG, "Error marking video as watched: " + e.getMessage());
                     }
+                } catch (Throwable e) {
+                    android.util.Log.e(TAG, "Error automatically marking video as watched: " + e.getMessage());
+                }
+                
+                // Set up simple OK button handler (just closes overlay)
+                mSummaryOverlay.setOnConfirmListener(() -> {
+                    // OK button just closes the summary overlay
                 });
                 mSummaryOverlay.showText(fTitle, fBody);
             });

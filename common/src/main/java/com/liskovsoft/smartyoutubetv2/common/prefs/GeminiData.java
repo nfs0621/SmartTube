@@ -12,6 +12,8 @@ public class GeminiData {
     private static final String KEY_MAX_CHARS = "gemini_max_chars";
     private static final String KEY_MODE = "gemini_mode"; // "url" or "transcript"
     private static final String KEY_MODEL = "gemini_model"; // model selection
+    private static final String KEY_FACT_CHECK = "gemini_fact_check"; // fact check enabled
+    private static final String KEY_MARK_WATCHED = "gemini_mark_watched"; // mark as watched on summary
     @SuppressLint("StaticFieldLeak")
     private static GeminiData sInstance;
     private final AppPrefs mPrefs;
@@ -97,6 +99,22 @@ public class GeminiData {
 
     public void setModel(String model) {
         mPrefs.putString(KEY_MODEL, model);
+    }
+
+    public boolean isFactCheckEnabled() {
+        return mPrefs.getBoolean(KEY_FACT_CHECK, true);
+    }
+
+    public void setFactCheckEnabled(boolean enabled) {
+        mPrefs.putBoolean(KEY_FACT_CHECK, enabled);
+    }
+
+    public boolean isMarkAsWatchedEnabled() {
+        return mPrefs.getBoolean(KEY_MARK_WATCHED, true);
+    }
+
+    public void setMarkAsWatchedEnabled(boolean enabled) {
+        mPrefs.putBoolean(KEY_MARK_WATCHED, enabled);
     }
 }
 

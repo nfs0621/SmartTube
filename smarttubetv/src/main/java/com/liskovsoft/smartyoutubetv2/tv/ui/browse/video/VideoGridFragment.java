@@ -386,7 +386,24 @@ public class VideoGridFragment extends GridFragment implements VideoSection {
             final String fTitle = title;
             if (getActivity() == null) return;
             android.util.Log.d(TAG, "Updating UI with Gemini summary");
-            getActivity().runOnUiThread(() -> mSummaryOverlay.showText(fTitle, fBody));
+            getActivity().runOnUiThread(() -> {
+                mSummaryOverlay.setOnConfirmListener(() -> {
+                    try {
+                        com.liskovsoft.smartyoutubetv2.common.app.models.data.Video v = video;
+                        if (v != null && v.hasVideo()) {
+                            com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.instance().updateHistory(v, 0);
+                            v.markFullyViewed();
+                            com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).save(
+                                    new com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.State(v, v.getDurationMs())
+                            );
+                            com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).persistState();
+                            com.liskovsoft.smartyoutubetv2.common.app.models.data.Playlist.instance().sync(v);
+                            android.widget.Toast.makeText(getContext(), getString(R.string.mark_as_watched), android.widget.Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Throwable ignored) {}
+                });
+                mSummaryOverlay.showText(fTitle, fBody);
+            });
         }).start();
     }
 }

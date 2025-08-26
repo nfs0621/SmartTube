@@ -7,6 +7,9 @@ public class GeminiData {
     private static final String KEY_ENABLED = "gemini_enabled";
     private static final String KEY_DELAY_MS = "gemini_delay_ms";
     private static final String KEY_DETAIL_LEVEL = "gemini_detail_level";
+    private static final String KEY_LANG = "gemini_lang";
+    private static final String KEY_DEBUG = "gemini_debug";
+    private static final String KEY_MAX_CHARS = "gemini_max_chars";
     @SuppressLint("StaticFieldLeak")
     private static GeminiData sInstance;
     private final AppPrefs mPrefs;
@@ -42,6 +45,33 @@ public class GeminiData {
 
     public void setDetailLevel(String level) {
         mPrefs.putString(KEY_DETAIL_LEVEL, level);
+    }
+
+    public String getPreferredLanguage() {
+        return mPrefs.getString(KEY_LANG, "en");
+    }
+
+    public void setPreferredLanguage(String lang) {
+        mPrefs.putString(KEY_LANG, lang);
+    }
+
+    public boolean isDebugLogging() {
+        return mPrefs.getBoolean(KEY_DEBUG, false);
+    }
+
+    public void setDebugLogging(boolean enabled) {
+        mPrefs.putBoolean(KEY_DEBUG, enabled);
+    }
+
+    /**
+     * 0 or negative means unlimited
+     */
+    public int getMaxTranscriptChars() {
+        return mPrefs.getInt(KEY_MAX_CHARS, 0);
+    }
+
+    public void setMaxTranscriptChars(int max) {
+        mPrefs.putInt(KEY_MAX_CHARS, max);
     }
 }
 

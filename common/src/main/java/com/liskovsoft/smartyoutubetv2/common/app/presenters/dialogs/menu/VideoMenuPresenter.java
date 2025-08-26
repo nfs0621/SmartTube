@@ -957,6 +957,21 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                 new com.liskovsoft.smartyoutubetv2.common.ui.summary.VideoSummaryOverlay(activity);
             
             summaryOverlay.showLoading("Summarizing " + (video.title != null ? video.title : "video") + "...");
+            // Mark watched on OK/Enter
+            summaryOverlay.setOnConfirmListener(() -> {
+                try {
+                    com.liskovsoft.smartyoutubetv2.common.app.models.data.Video v = video;
+                    if (v != null && v.hasVideo()) {
+                        com.liskovsoft.smartyoutubetv2.common.misc.MediaServiceManager.instance().updateHistory(v, 0);
+                        v.markFullyViewed();
+                        com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).save(
+                                new com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.State(v, v.getDurationMs())
+                        );
+                        com.liskovsoft.smartyoutubetv2.common.app.models.playback.service.VideoStateService.instance(getContext()).persistState();
+                        com.liskovsoft.smartyoutubetv2.common.app.models.data.Playlist.instance().sync(v);
+                    }
+                } catch (Throwable ignored) {}
+            });
 
             // Run Gemini API call in background thread
             new Thread(() -> {

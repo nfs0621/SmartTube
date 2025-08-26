@@ -22,6 +22,9 @@ public class VideoSummaryOverlay {
     private TextView text;
     private ScrollView scroll;
     private View previousFocus;
+    public interface OnConfirmListener { void onConfirm(); }
+    private OnConfirmListener onConfirmListener;
+    public void setOnConfirmListener(OnConfirmListener l) { this.onConfirmListener = l; }
 
     public VideoSummaryOverlay(Activity activity) {
         this.activity = activity;
@@ -51,6 +54,12 @@ public class VideoSummaryOverlay {
                         hide();
                         return true;
                     } 
+                    // Confirm mark-as-watched on OK/Enter
+                    else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER) {
+                        if (onConfirmListener != null) onConfirmListener.onConfirm();
+                        hide();
+                        return true;
+                    }
                     // Scroll with up/down
                     else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
                         VideoSummaryOverlay.this.scrollBy(-200);

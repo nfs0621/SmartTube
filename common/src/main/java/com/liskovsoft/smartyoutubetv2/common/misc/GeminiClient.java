@@ -38,9 +38,14 @@ public class GeminiClient {
     private static final String MODEL = "gemini-2.5-flash";
     private static final String API_URL = "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent?key=";
     private final String apiKey;
+    private final String prefLang;
+    private final boolean debug;
 
     public GeminiClient(Context context) {
         this.apiKey = loadApiKey(context);
+        com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(context);
+        this.prefLang = gd.getPreferredLanguage();
+        this.debug = gd.isDebugLogging();
     }
 
     public boolean isConfigured() {
@@ -68,51 +73,33 @@ public class GeminiClient {
             android.util.Log.w("GeminiClient", "Could not fetch transcript for " + videoId + ": " + e.getMessage());
         }
         
-        String prompt = buildPrompt(title, author, videoId, detailLevel, transcript, transcriptSource);
-        JSONObject req = new JSONObject();
-        JSONArray parts = new JSONArray().put(new JSONObject().put("text", prompt));
-        JSONObject content = new JSONObject().put("parts", parts);
-        req.put("contents", new JSONArray().put(content));
-
-        byte[] payload = req.toString().getBytes(StandardCharsets.UTF_8);
-
-        HttpURLConnection conn = (HttpURLConnection) new URL(API_URL + apiKey).openConnection();
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-        conn.setDoOutput(true);
-        conn.setConnectTimeout(10000);
-        conn.setReadTimeout(20000);
-        try (OutputStream os = conn.getOutputStream()) {
-            os.write(payload);
-        }
-
-        int code = conn.getResponseCode();
-        InputStream is = code >= 200 && code < 300 ? conn.getInputStream() : conn.getErrorStream();
-        String resp = readAll(is);
-        if (code < 200 || code >= 300) {
-            return "Gemini error: " + code + "\n" + resp;
-        }
-        JSONObject json = new JSONObject(resp);
-        JSONArray candidates = json.optJSONArray("candidates");
-        if (candidates != null && candidates.length() > 0) {
-            JSONObject cand = candidates.getJSONObject(0);
-            JSONObject contentResp = cand.optJSONObject("content");
-            if (contentResp != null) {
-                JSONArray partsResp = contentResp.optJSONArray("parts");
-                if (partsResp != null && partsResp.length() > 0) {
-                    return partsResp.getJSONObject(0).optString("text", resp);
+        boolean officialAvailable = hasOfficialTrack(videoId);
+        String prompt = buildPrompt(title, author, videoId, detailLevel, transcript, transcriptSource, officialAvailable);
+        try {
+            return callGemini(prompt);
+        } catch (IOException e) {
+            // Fallback: chunked summarization to avoid timeouts on huge transcripts
+            if (!TextUtils.isEmpty(transcript)) {
+                String[] chunks = splitTranscript(transcript, 12000);
+                StringBuilder partials = new StringBuilder();
+                for (int i = 0; i < chunks.length; i++) {
+                    String chunkPrompt = buildPrompt(title + " (chunk " + (i+1) + "/" + chunks.length + ")", author, videoId, detailLevel, chunks[i], transcriptSource, officialAvailable);
+                    String part = callGemini(chunkPrompt);
+                    partials.append("\n[Chunk ").append(i+1).append("]\n").append(part).append("\n");
                 }
+                String combine = "Summarize the following partial summaries into a single cohesive summary with the same format and header requirements.\n\n" + partials;
+                return callGemini(combine);
             }
+            throw e;
         }
-        return resp;
     }
 
-    private static String buildPrompt(String title, String author, String videoId, String detailLevel, String transcript, String transcriptSource) {
+    private static String buildPrompt(String title, String author, String videoId, String detailLevel, String transcript, String transcriptSource, boolean officialAvailable) {
         StringBuilder sb = new StringBuilder();
         sb.append("You are an assistant for Android TV. Summarize this YouTube video for TV reading.\n");
         sb.append("IMPORTANT: Start your response with a header line showing the detail level and sources used:\n");
         sb.append("Format: '[Detail Level: " + capitalize(detailLevel) + "] [Source: " + 
-                  (transcriptSource != null ? transcriptSource : "Title/Metadata Only") + "]'\n");
+                  (transcriptSource != null ? transcriptSource : "Title/Metadata Only") + "] [Official CC Available: " + (officialAvailable ? "Yes" : "No") + "]'\n");
         sb.append("Then add a blank line before the actual summary.\n\n");
         
         // Add detail level specific instructions
@@ -179,7 +166,7 @@ public class GeminiClient {
     }
     
     private TranscriptResult fetchTranscriptWithSource(String videoId) throws IOException, JSONException {
-        android.util.Log.d("GeminiClient", "Attempting to fetch transcript for videoId: " + videoId);
+        if (debug) android.util.Log.d("GeminiClient", "Attempting to fetch transcript for videoId: " + videoId);
 
         // Method 00: InnerTube get_transcript using watch page params
         try {
@@ -196,44 +183,45 @@ public class GeminiClient {
         try {
             TranscriptResult apiResult = fetchCaptionsViaApi(videoId);
             if (apiResult != null && !TextUtils.isEmpty(apiResult.transcript)) {
-                android.util.Log.d("GeminiClient", "Transcript via API found (" + apiResult.source + "), length: " + apiResult.transcript.length());
+                if (debug) android.util.Log.d("GeminiClient", "Transcript via API found (" + apiResult.source + "), length: " + apiResult.transcript.length());
                 return apiResult;
             }
         } catch (Exception e) {
-            android.util.Log.d("GeminiClient", "API captions failed for " + videoId + ": " + e.getMessage());
+            android.util.Log.w("GeminiClient", "API captions failed for " + videoId + ": " + e.getMessage());
         }
         
         // Method 1: Try YouTube's timedtext API (official captions)
         try {
-            android.util.Log.d("GeminiClient", "Trying official captions for " + videoId);
+            if (debug) android.util.Log.d("GeminiClient", "Trying official captions for " + videoId);
             String transcript = fetchYouTubeTimedText(videoId);
             if (!TextUtils.isEmpty(transcript)) {
-                android.util.Log.d("GeminiClient", "Official captions found, length: " + transcript.length());
+                if (debug) android.util.Log.d("GeminiClient", "Official captions found, length: " + transcript.length());
                 return new TranscriptResult(cleanTranscript(transcript), "Official Closed Captions");
             }
         } catch (Exception e) {
-            android.util.Log.d("GeminiClient", "Official captions failed for " + videoId + ": " + e.getMessage());
+            android.util.Log.w("GeminiClient", "Official captions failed for " + videoId + ": " + e.getMessage());
         }
         
         // Method 2: Try auto-generated captions
         try {
-            android.util.Log.d("GeminiClient", "Trying auto-generated captions for " + videoId);
+            if (debug) android.util.Log.d("GeminiClient", "Trying auto-generated captions for " + videoId);
             String transcript = fetchAutoGeneratedCaptions(videoId);
             if (!TextUtils.isEmpty(transcript)) {
-                android.util.Log.d("GeminiClient", "Auto-generated captions found, length: " + transcript.length());
+                if (debug) android.util.Log.d("GeminiClient", "Auto-generated captions found, length: " + transcript.length());
                 return new TranscriptResult(cleanTranscript(transcript), "Auto-Generated Captions");
             }
         } catch (Exception e) {
-            android.util.Log.d("GeminiClient", "Auto-generated captions failed for " + videoId + ": " + e.getMessage());
+            android.util.Log.w("GeminiClient", "Auto-generated captions failed for " + videoId + ": " + e.getMessage());
         }
         
-        android.util.Log.d("GeminiClient", "No transcript found for " + videoId);
+        android.util.Log.w("GeminiClient", "No transcript found for " + videoId);
         return new TranscriptResult(null, null); // No transcript found
     }
 
     private String fetchTranscriptViaInnerTube(String videoId) throws IOException, JSONException {
         // Step 1: fetch watch page and extract getTranscriptEndpoint params
-        String watchUrl = "https://www.youtube.com/watch?v=" + videoId + "&hl=en&gl=US&bpctr=9999999999&has_verified=1";
+        String watchUrl = "https://www.youtube.com/watch?v=" + videoId +
+                "&hl=" + (TextUtils.isEmpty(prefLang) ? "en" : prefLang) + "&gl=US&bpctr=9999999999&has_verified=1";
         String page = makeHttpRequest(watchUrl);
         if (TextUtils.isEmpty(page)) return null;
         android.util.Log.d("GeminiClient", "Fetched watch page for transcript, length=" + page.length());
@@ -378,7 +366,7 @@ public class GeminiClient {
             com.liskovsoft.youtubeapi.videoinfo.models.VideoInfo info = null;
             for (com.liskovsoft.youtubeapi.common.helpers.AppClient client : clients) {
                 String q = com.liskovsoft.youtubeapi.videoinfo.V2.VideoInfoApiHelper.getVideoInfoQuery(client, videoId, null);
-                android.util.Log.d("GeminiClient", "Trying player API with client=" + client.name());
+                if (debug) android.util.Log.d("GeminiClient", "Trying player API with client=" + client.name());
                 try {
                     // Use generic method; OkHttp helper will inject API key and headers
                     info = com.liskovsoft.googlecommon.common.helpers.RetrofitHelper.get(api.getVideoInfo(q));
@@ -387,12 +375,12 @@ public class GeminiClient {
                 }
             }
             if (info == null || info.getCaptionTracks() == null || info.getCaptionTracks().isEmpty()) {
-                android.util.Log.d("GeminiClient", "Player API returned no captionTracks");
+                if (debug) android.util.Log.d("GeminiClient", "Player API returned no captionTracks");
                 return null;
             }
 
             java.util.List<com.liskovsoft.youtubeapi.videoinfo.models.CaptionTrack> tracks = info.getCaptionTracks();
-            android.util.Log.d("GeminiClient", "Player API captions available: " + tracks.size());
+            if (debug) android.util.Log.d("GeminiClient", "Player API captions available: " + tracks.size());
             // Prefer official English, then autogenerated English, else first track
             com.liskovsoft.youtubeapi.videoinfo.models.CaptionTrack preferred = null;
             for (com.liskovsoft.youtubeapi.videoinfo.models.CaptionTrack t : tracks) {
@@ -412,12 +400,12 @@ public class GeminiClient {
             if (preferred.isTranslatable() && (preferred.getLanguageCode() == null || !"en".equalsIgnoreCase(preferred.getLanguageCode()))) {
                 url += (url.contains("?") ? "&" : "?") + "tlang=en";
             }
-            android.util.Log.d("GeminiClient", "Fetching caption url: " + url);
+            if (debug) android.util.Log.d("GeminiClient", "Fetching caption url: " + url);
             if (TextUtils.isEmpty(url)) return null;
             String resp = makeHttpRequest(url);
             String parsed = parseCaptionResponse(resp);
             if (TextUtils.isEmpty(parsed)) {
-                android.util.Log.d("GeminiClient", "Empty parse from caption url");
+                if (debug) android.util.Log.d("GeminiClient", "Empty parse from caption url");
                 return null;
             }
             String source = preferred.isAutogenerated() ? "Auto-Generated Captions" : "Official Closed Captions";
@@ -497,15 +485,40 @@ public class GeminiClient {
         
         throw new IOException("No auto-generated captions available");
     }
+
+    private boolean hasOfficialTrack(String videoId) {
+        try {
+            com.liskovsoft.youtubeapi.videoinfo.V2.VideoInfoApi api =
+                    com.liskovsoft.googlecommon.common.helpers.RetrofitHelper.create(
+                            com.liskovsoft.youtubeapi.videoinfo.V2.VideoInfoApi.class);
+            com.liskovsoft.youtubeapi.common.helpers.AppClient[] clients = new com.liskovsoft.youtubeapi.common.helpers.AppClient[] {
+                    com.liskovsoft.youtubeapi.common.helpers.AppClient.WEB_EMBED,
+                    com.liskovsoft.youtubeapi.common.helpers.AppClient.WEB
+            };
+            for (com.liskovsoft.youtubeapi.common.helpers.AppClient client : clients) {
+                String q = com.liskovsoft.youtubeapi.videoinfo.V2.VideoInfoApiHelper.getVideoInfoQuery(client, videoId, null);
+                com.liskovsoft.youtubeapi.videoinfo.models.VideoInfo info = com.liskovsoft.googlecommon.common.helpers.RetrofitHelper.get(api.getVideoInfo(q));
+                if (info != null && info.getCaptionTracks() != null) {
+                    for (com.liskovsoft.youtubeapi.videoinfo.models.CaptionTrack t : info.getCaptionTracks()) {
+                        if (!t.isAutogenerated()) return true;
+                    }
+                    return false;
+                }
+            }
+        } catch (Throwable ignored) {}
+        return false;
+    }
     
     private String makeHttpRequest(String urlString) throws IOException {
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
         conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
-        conn.setRequestProperty("Accept-Language", "en-US,en;q=0.9");
+        String langHdr = TextUtils.isEmpty(prefLang) ? "en-US,en;q=0.9" : (prefLang + ";q=1.0,en;q=0.8");
+        conn.setRequestProperty("Accept-Language", langHdr);
         // Bypass EU consent page and enforce English content
-        conn.setRequestProperty("Cookie", "CONSENT=YES+cb.20210620-07-p0.en+FX; PREF=hl=en&f6=400");
+        String cookie = "CONSENT=YES+cb.20210620-07-p0.en+FX; PREF=hl=" + (TextUtils.isEmpty(prefLang) ? "en" : prefLang) + "&f6=400";
+        conn.setRequestProperty("Cookie", cookie);
         conn.setConnectTimeout(10000);
         conn.setReadTimeout(15000);
         
@@ -604,9 +617,12 @@ public class GeminiClient {
         transcript = transcript.replaceAll("\\[.*?\\]", ""); // Remove [Music], [Applause], etc.
         transcript = transcript.replaceAll("\\(.*?\\)", ""); // Remove (background noise), etc.
         
-        // Limit transcript length for API efficiency (keep first ~4000 chars for context)
-        if (transcript.length() > 4000) {
-            transcript = transcript.substring(0, 4000) + "... [transcript truncated]";
+        // Limit transcript length per settings (0=unlimited)
+        int max = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(
+                com.liskovsoft.youtubeapi.app.AppService.instance().getContext()
+        ).getMaxTranscriptChars();
+        if (max > 0 && transcript.length() > max) {
+            transcript = transcript.substring(0, max) + "... [transcript truncated]";
         }
         
         return transcript.trim();
@@ -636,6 +652,58 @@ public class GeminiClient {
             }
         }
         return sb.toString();
+    }
+
+    private String callGemini(String prompt) throws IOException, JSONException {
+        JSONObject req = new JSONObject();
+        JSONArray parts = new JSONArray().put(new JSONObject().put("text", prompt));
+        JSONObject content = new JSONObject().put("parts", parts);
+        req.put("contents", new JSONArray().put(content));
+
+        byte[] payload = req.toString().getBytes(StandardCharsets.UTF_8);
+
+        HttpURLConnection conn = (HttpURLConnection) new URL(API_URL + apiKey).openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+        conn.setDoOutput(true);
+        conn.setConnectTimeout(30000);
+        conn.setReadTimeout(90000);
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(payload);
+        }
+
+        int code = conn.getResponseCode();
+        InputStream is = code >= 200 && code < 300 ? conn.getInputStream() : conn.getErrorStream();
+        String resp = readAll(is);
+        if (code < 200 || code >= 300) {
+            throw new IOException("Gemini HTTP " + code + ":\n" + resp);
+        }
+        JSONObject json = new JSONObject(resp);
+        JSONArray candidates = json.optJSONArray("candidates");
+        if (candidates != null && candidates.length() > 0) {
+            JSONObject cand = candidates.getJSONObject(0);
+            JSONObject contentResp = cand.optJSONObject("content");
+            if (contentResp != null) {
+                JSONArray partsResp = contentResp.optJSONArray("parts");
+                if (partsResp != null && partsResp.length() > 0) {
+                    return partsResp.getJSONObject(0).optString("text", resp);
+                }
+            }
+        }
+        return resp;
+    }
+
+    private static String[] splitTranscript(String transcript, int chunkLen) {
+        if (transcript == null) return new String[0];
+        int len = transcript.length();
+        if (len <= chunkLen) return new String[] { transcript };
+        int parts = (len + chunkLen - 1) / chunkLen;
+        String[] out = new String[parts];
+        for (int i = 0, pos = 0; i < parts; i++, pos += chunkLen) {
+            int end = Math.min(pos + chunkLen, len);
+            out[i] = transcript.substring(pos, end);
+        }
+        return out;
     }
 }
 

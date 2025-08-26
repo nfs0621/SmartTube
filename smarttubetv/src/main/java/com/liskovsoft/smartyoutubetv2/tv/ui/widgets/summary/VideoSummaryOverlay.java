@@ -32,16 +32,25 @@ public class VideoSummaryOverlay {
         if (root != null) return;
         ViewGroup content = activity.findViewById(android.R.id.content);
         root = LayoutInflater.from(activity).inflate(R.layout.overlay_video_summary, content, false);
+        if (root instanceof ViewGroup) {
+            ((ViewGroup) root).setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+        }
         progress = root.findViewById(R.id.gemini_progress);
         status = root.findViewById(R.id.gemini_status);
         text = root.findViewById(R.id.gemini_text);
         scroll = root.findViewById(R.id.gemini_scroll);
 
+        root.setClickable(true);
         root.setFocusable(true);
         root.setFocusableInTouchMode(true);
         root.setOnKeyListener((v, keyCode, event) -> {
             if (event.getAction() != KeyEvent.ACTION_DOWN) return false;
             switch (keyCode) {
+                case KeyEvent.KEYCODE_DPAD_CENTER:
+                case KeyEvent.KEYCODE_ENTER:
+                    if (onConfirmListener != null) onConfirmListener.onConfirm();
+                    hide();
+                    return true;
                 case KeyEvent.KEYCODE_DPAD_LEFT:
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
                 case KeyEvent.KEYCODE_BACK:
@@ -80,7 +89,10 @@ public class VideoSummaryOverlay {
         progress.setVisibility(View.GONE);
         status.setText(title);
         text.setText(body);
-        handler.post(() -> scroll.scrollTo(0, 0));
+        handler.post(() -> {
+            scroll.scrollTo(0, 0);
+            root.requestFocus();
+        });
     }
 
     public void hide() {
@@ -93,5 +105,13 @@ public class VideoSummaryOverlay {
     public boolean isVisible() {
         return root != null && root.getVisibility() == View.VISIBLE;
     }
+
+    public interface OnConfirmListener {
+        void onConfirm();
+    }
+    private OnConfirmListener onConfirmListener;
+    public void setOnConfirmListener(OnConfirmListener l) { this.onConfirmListener = l; }
+
+    
 }
 

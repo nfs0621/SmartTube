@@ -62,7 +62,7 @@
             android:layout_height="wrap_content"
             android:textColor="#AAAAAA"
             android:textSize="14sp"
-            android:text="DPAD Up/Down: scroll • Left: close" />
+            android:text="OK: mark watched • Up/Down: scroll • Left/Right/Back: close" />
     </LinearLayout>
 
 </FrameLayout>

@@ -57,6 +57,25 @@ public class GeminiSettingsPresenter {
             opt -> data.setDetailLevel("detailed"), "detailed".equals(currentLevel)));
         dlg.appendRadioCategory(context.getString(R.string.gemini_detail_level_title), detailLevels);
 
+        // Transcript content size / tokens
+        List<OptionItem> sizes = new ArrayList<>();
+        int currentMax = data.getMaxTranscriptChars();
+        sizes.add(UiOptionItem.from("Full transcript", opt -> data.setMaxTranscriptChars(0), currentMax == 0));
+        sizes.add(UiOptionItem.from("~4k chars", opt -> data.setMaxTranscriptChars(4000), currentMax == 4000));
+        sizes.add(UiOptionItem.from("~12k chars", opt -> data.setMaxTranscriptChars(12000), currentMax == 12000));
+        dlg.appendRadioCategory("Transcript length", sizes);
+
+        // Preferred language
+        List<OptionItem> langs = new ArrayList<>();
+        String curLang = data.getPreferredLanguage();
+        langs.add(UiOptionItem.from("English", opt -> data.setPreferredLanguage("en"), "en".equalsIgnoreCase(curLang)));
+        dlg.appendRadioCategory("Preferred transcript language", langs);
+
+        // Verbose logging
+        List<OptionItem> debug = new ArrayList<>();
+        debug.add(UiOptionItem.from("Verbose logging", opt -> data.setDebugLogging(opt.isSelected()), data.isDebugLogging()));
+        dlg.appendCheckedCategory("Debug", debug);
+
         dlg.showDialog(context.getString(R.string.gemini_settings_title), null);
     }
 }

@@ -4,8 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 
 public class GeminiData {
-    private static final String KEY_ENABLED = "gemini_enabled";
-    private static final String KEY_DELAY_MS = "gemini_delay_ms";
+    // Removed: auto-summary enable and delay keys
     private static final String KEY_DETAIL_LEVEL = "gemini_detail_level";
     private static final String KEY_LANG = "gemini_lang";
     private static final String KEY_DEBUG = "gemini_debug";
@@ -27,21 +26,7 @@ public class GeminiData {
         return sInstance;
     }
 
-    public boolean isEnabled() {
-        return mPrefs.getBoolean(KEY_ENABLED, true);
-    }
-
-    public void setEnabled(boolean enabled) {
-        mPrefs.putBoolean(KEY_ENABLED, enabled);
-    }
-
-    public int getDelayMs() {
-        return mPrefs.getInt(KEY_DELAY_MS, 5000);
-    }
-
-    public void setDelayMs(int ms) {
-        mPrefs.putInt(KEY_DELAY_MS, ms);
-    }
+    // Auto-summary enable and delay removed
 
     public String getDetailLevel() {
         return mPrefs.getString(KEY_DETAIL_LEVEL, "moderate");

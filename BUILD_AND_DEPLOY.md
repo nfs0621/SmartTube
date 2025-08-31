@@ -20,17 +20,21 @@ sdk.dir=C\\:\\Users\\paul\\AppData\\Local\\Android\\Sdk
 ndk.dir=C\\:\\Users\\paul\\AppData\\Local\\Android\\Sdk\\ndk\\27.0.12077973
 ```
 
-### 2. Build Commands
+### 2. Build Commands (Stable)
 
-#### Stable Release Build
+#### Stable Debug/Release
 ```bash
-./gradlew assembleStstable
+# Debug (recommended for development)
+./gradlew :smarttubetv:assembleStstableDebug
+
+# Release (for distribution)
+./gradlew :smarttubetv:assembleStstableRelease
 ```
 
-This generates APKs for multiple architectures:
-- `SmartTube_stable_29.20_arm64-v8a.apk` (64-bit ARM - for newer devices)
-- `SmartTube_stable_29.20_armeabi-v7a.apk` (32-bit ARM - for older devices) 
-- `SmartTube_stable_29.20_x86.apk` (Intel x86 - for emulators/some tablets)
+This generates ABI‑split APKs, for example:
+- `SmartTube_stable_29.22_arm64-v8a.apk` (64‑bit ARM)
+- `SmartTube_stable_29.22_armeabi-v7a.apk` (32‑bit ARM)
+- `SmartTube_stable_29.22_x86.apk` (Intel/x86)
 
 #### Other Build Variants
 ```bash
@@ -51,7 +55,24 @@ This generates APKs for multiple architectures:
 
 ## Deploy Process
 
-### 1. Connect to Android TV via ADB
+### 1. One‑Command Stable Deploy (Recommended)
+
+Use the included scripts to build and install the correct APK to all connected TVs with short timeouts:
+
+```bash
+# Linux/macOS
+bash scripts/deploy_to_tvs.sh ststableDebug
+
+# Windows PowerShell
+powershell -File scripts/deploy_to_tvs.ps1 -Variant ststableDebug
+```
+
+These scripts:
+- Build `StstableDebug` if needed
+- Detect each device ABI and pick the matching APK
+- Use short ADB timeouts and retry with force‑stop/uninstall when necessary
+
+### 2. Connect to Android TV via ADB (Manual)
 
 ```bash
 # Connect to TV (replace with your TV's IP)
@@ -61,9 +82,9 @@ adb connect 192.168.0.124
 adb devices
 ```
 
-### 2. Install APK
+### 3. Install APK (Manual)
 
-#### For Debug Builds (Pre-signed)
+#### For Debug Builds (Pre‑signed)
 ```bash
 adb -s 192.168.0.124:5555 install -r "./smarttubetv/build/outputs/apk/ststable/debug/SmartTube_stable_29.20_armeabi-v7a.apk"
 ```
@@ -84,14 +105,14 @@ Release builds need to be signed before installation:
 adb -s 192.168.0.124:5555 install -r "./smarttubetv/build/outputs/apk/ststable/release/SmartTube_stable_29.20_armeabi-v7a.apk"
 ```
 
-### 3. Architecture Selection
+### 4. Architecture Selection
 
 Choose the appropriate APK for your device:
 - **arm64-v8a**: Modern Android TVs and devices (64-bit ARM)
 - **armeabi-v7a**: Older Android TVs and devices (32-bit ARM) 
 - **x86**: Intel-based devices or emulators
 
-Most Android TVs use **armeabi-v7a** (32-bit ARM).
+Most Android TVs use **armeabi-v7a** (32‑bit ARM).
 
 ## Troubleshooting
 
@@ -114,10 +135,8 @@ If builds fail due to memory:
 ## Quick Commands Reference
 
 ```bash
-# Full build and deploy workflow
-./gradlew assembleStstable
-adb connect 192.168.0.124
-adb -s 192.168.0.124:5555 install -r "./smarttubetv/build/outputs/apk/ststable/debug/SmartTube_stable_29.20_armeabi-v7a.apk"
+# Quick stable build and deploy
+bash scripts/deploy_to_tvs.sh ststableDebug
 
 # Clean build (if needed)
 ./gradlew clean assembleStstable
@@ -125,9 +144,9 @@ adb -s 192.168.0.124:5555 install -r "./smarttubetv/build/outputs/apk/ststable/d
 
 ## Version Information
 
-- Current version: 29.20
-- Version code: 2110
-- Application ID: com.teamsmart.videomanager.tv (stable variant)
+- Current version: 29.22
+- Version code: 2112
+- Stable applicationId: `com.teamsmart.videomanager.tv`
 
 ## Troubleshooting Gemini Features
 

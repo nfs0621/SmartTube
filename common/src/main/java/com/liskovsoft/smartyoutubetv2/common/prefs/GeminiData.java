@@ -13,6 +13,8 @@ public class GeminiData {
     private static final String KEY_MODEL = "gemini_model"; // model selection
     private static final String KEY_FACT_CHECK = "gemini_fact_check"; // fact check enabled
     private static final String KEY_MARK_WATCHED = "gemini_mark_watched"; // mark as watched on summary
+    private static final String KEY_SUMMARY_EMAIL = "gemini_summary_email"; // recipient email for summaries
+    private static final String KEY_EMAIL_SUMMARIES_ENABLED = "gemini_email_summaries_enabled"; // email summaries feature enabled
     @SuppressLint("StaticFieldLeak")
     private static GeminiData sInstance;
     private final AppPrefs mPrefs;
@@ -79,7 +81,8 @@ public class GeminiData {
      * Options: "auto", "gemini-2.0-flash-exp", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"
      */
     public String getModel() {
-        return mPrefs.getString(KEY_MODEL, "auto");
+        // Default to a tools-capable model for better compatibility (fact-check, etc.)
+        return mPrefs.getString(KEY_MODEL, "gemini-2.5-flash");
     }
 
     public void setModel(String model) {
@@ -100,6 +103,22 @@ public class GeminiData {
 
     public void setMarkAsWatchedEnabled(boolean enabled) {
         mPrefs.putBoolean(KEY_MARK_WATCHED, enabled);
+    }
+
+    public String getSummaryEmail() {
+        return mPrefs.getString(KEY_SUMMARY_EMAIL, null);
+    }
+
+    public void setSummaryEmail(String email) {
+        mPrefs.putString(KEY_SUMMARY_EMAIL, email);
+    }
+
+    public boolean isEmailSummariesEnabled() {
+        return mPrefs.getBoolean(KEY_EMAIL_SUMMARIES_ENABLED, false); // Default: off
+    }
+
+    public void setEmailSummariesEnabled(boolean enabled) {
+        mPrefs.putBoolean(KEY_EMAIL_SUMMARIES_ENABLED, enabled);
     }
 }
 

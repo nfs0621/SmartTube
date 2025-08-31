@@ -936,37 +936,11 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
         MainUIData mainUIData = MainUIData.instance(getContext());
         
         if (mainUIData.isMenuItemEnabled(MainUIData.MENU_ITEM_GEMINI_SUMMARY)) {
-            // Top option: Default (uses settings)
+            // Only the default option (uses settings)
             mDialogPresenter.appendSingleButton(
-                    UiOptionItem.from("Gemini Summary - Default", optionItem -> {
+                    UiOptionItem.from("Gemini Summary", optionItem -> {
                         mDialogPresenter.closeDialog();
                         showGeminiSummary(); // Uses settings
-                    })
-            );
-            
-            // Reverse order: Detailed first, then Concise
-            mDialogPresenter.appendSingleButton(
-                    UiOptionItem.from("Gemini Summary - Transcript - Detailed", optionItem -> {
-                        mDialogPresenter.closeDialog();
-                        showGeminiSummary("transcript", "detailed");
-                    })
-            );
-            mDialogPresenter.appendSingleButton(
-                    UiOptionItem.from("Gemini Summary - Transcript - Concise", optionItem -> {
-                        mDialogPresenter.closeDialog();
-                        showGeminiSummary("transcript", "concise");
-                    })
-            );
-            mDialogPresenter.appendSingleButton(
-                    UiOptionItem.from("Gemini Summary - URL - Detailed", optionItem -> {
-                        mDialogPresenter.closeDialog();
-                        showGeminiSummary("url", "detailed");
-                    })
-            );
-            mDialogPresenter.appendSingleButton(
-                    UiOptionItem.from("Gemini Summary - URL - Concise", optionItem -> {
-                        mDialogPresenter.closeDialog();
-                        showGeminiSummary("url", "concise");
                     })
             );
         }
@@ -1019,8 +993,8 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                     if (gemini.isConfigured()) {
                         int startSec = Math.max(0, video.startTimeSeconds);
                         summary = gemini.summarize(video.title, video.author, video.videoId, detailLevel, startSec, mode);
-                        // Update title to include mode and model used
-                        title = "Gemini Summary [" + mode.toUpperCase() + " - " + detailLevel.toUpperCase() + " - " + gemini.getLastUsedModel() + "]";
+                        // Keep title simple - details moved to bottom of summary
+                        title = "Gemini Summary";
                         
                         // Auto-mark video as watched when summary is generated successfully
                         try {
@@ -1055,6 +1029,9 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                     // Show the summary on the UI thread using the proper overlay
                     activity.runOnUiThread(() -> {
                         summaryOverlay.showText(finalTitle, finalSummary);
+                        
+                        // Set up async fact checking and email functionality
+                        setupSummaryOverlayActions(summaryOverlay, finalSummary, video, gemini, activity);
                     });
                 } catch (Exception e) {
                     String errorMsg = "Failed to get summary:\n" + e.getMessage();
@@ -1063,6 +1040,88 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                     });
                 }
             }).start();
+        }
+    }
+
+    /**
+     * Set up email and fact check functionality for the summary overlay.
+     * This implements the new async two-stage process: summary first, then fact check on demand.
+     */
+    private void setupSummaryOverlayActions(com.liskovsoft.smartyoutubetv2.common.ui.summary.VideoSummaryOverlay summaryOverlay, 
+                                          String summary, 
+                                          com.liskovsoft.smartyoutubetv2.common.app.models.data.Video video,
+                                          com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient gemini,
+                                          android.app.Activity activity) {
+        com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = 
+            com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
+        
+        // Set up email functionality (if enabled)
+        if (gd.isEmailSummariesEnabled()) {
+            summaryOverlay.setOnEmailListener(() -> {
+                try {
+                    String to = gd.getSummaryEmail();
+                    if (to == null || to.isEmpty()) {
+                        android.widget.Toast.makeText(getContext(), "Set summary email in Settings", android.widget.Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    String subject = "SmartTube Summary: " + (video.title != null ? video.title : "Video");
+                    String link = video.videoId != null ? ("https://www.youtube.com/watch?v=" + video.videoId) : "";
+                    StringBuilder body = new StringBuilder();
+                    body.append("Title: ").append(video.title).append("\n");
+                    body.append("Channel: ").append(video.author).append("\n");
+                    if (!link.isEmpty()) body.append("Link: ").append(link).append("\n");
+                    body.append("\nSummary:\n").append(summary);
+
+                    android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_SENDTO);
+                    intent.setData(android.net.Uri.parse("mailto:"));
+                    intent.putExtra(android.content.Intent.EXTRA_EMAIL, new String[]{to});
+                    intent.putExtra(android.content.Intent.EXTRA_SUBJECT, subject);
+                    intent.putExtra(android.content.Intent.EXTRA_TEXT, body.toString());
+                    try {
+                        activity.startActivity(intent);
+                    } catch (Throwable e) {
+                        android.widget.Toast.makeText(getContext(), "No email app found", android.widget.Toast.LENGTH_LONG).show();
+                    }
+                } catch (Throwable e) {
+                    android.util.Log.e("VideoMenuPresenter", "Email summary error: " + e.getMessage());
+                }
+            });
+        } else {
+            // Hide email button when disabled
+            summaryOverlay.setOnEmailListener(null);
+        }
+
+        // Set up fact check functionality (async, on-demand)
+        android.util.Log.d("VideoMenuPresenter", "Checking fact check setting: " + gd.isFactCheckEnabled());
+        if (gd.isFactCheckEnabled()) {
+            android.util.Log.d("VideoMenuPresenter", "✓ Fact checking ENABLED - starting async fact check for: " + video.title);
+            
+            // For now, auto-trigger fact check after a 3-second delay (temporary)
+            new Thread(() -> {
+                try {
+                    Thread.sleep(3000); // 3 second delay
+                    android.util.Log.d("VideoMenuPresenter", "Starting async fact check after delay...");
+                    
+                    String factCheckResult = gemini.factCheck(summary, video.title, video.author, video.videoId);
+                    
+                    android.util.Log.d("VideoMenuPresenter", "Fact check result: " + (factCheckResult != null ? "SUCCESS (" + factCheckResult.length() + " chars)" : "NULL"));
+                    
+                    if (factCheckResult != null && !factCheckResult.isEmpty()) {
+                        // Update overlay with fact check results
+                        activity.runOnUiThread(() -> {
+                            String updatedContent = summary + "\n\n" + factCheckResult;
+                            summaryOverlay.showText("Gemini Summary", updatedContent);
+                            android.util.Log.d("VideoMenuPresenter", "Fact check completed and overlay updated");
+                        });
+                    } else {
+                        android.util.Log.w("VideoMenuPresenter", "Fact check returned empty or null result");
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("VideoMenuPresenter", "Async fact check failed: " + e.getMessage(), e);
+                }
+            }).start();
+        } else {
+            android.util.Log.w("VideoMenuPresenter", "✗ Fact checking DISABLED in settings - not starting fact check");
         }
     }
 }

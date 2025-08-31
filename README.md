@@ -211,17 +211,29 @@ SmartTube is developed single-handedly; there is no larger team or company behin
 
 
 ## Build
-    
-**NOTE: OpenJDK 14 or older (!) is required. Newer JDK could cause app crash!**  
-To build and install debug version, run these commands:
+
+**NOTE:** Use OpenJDK 11–14. Newer JDKs may cause runtime issues on TV devices.
+
+### Developer Quickstart (Stable)
 
 ```
 git clone https://github.com/yuliskov/SmartTube.git
 cd SmartTube
 git submodule update --init
+
+# Connect your Android TV(s)
 adb connect <device_ip_address>
-gradlew clean installStorigDebug
+
+# Option A: One‑command build & install to all TVs (recommended)
+bash scripts/deploy_to_tvs.sh ststableDebug
+# Windows PowerShell:
+powershell -File scripts/deploy_to_tvs.ps1 -Variant ststableDebug
+
+# Option B: Gradle install to the currently selected/only device
+./gradlew :smarttubetv:installStstableDebug
 ```
+
+Outputs are under `smarttubetv/build/outputs/apk/ststable/<buildType>/SmartTube_stable_<version>_<abi>.apk`.
 
 
 ## Video codecs

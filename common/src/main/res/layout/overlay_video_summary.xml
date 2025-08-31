@@ -57,13 +57,31 @@
                 android:lineSpacingExtra="4dp" />
         </ScrollView>
 
-        <TextView
-            android:id="@+id/gemini_hint"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#AAAAAA"
-            android:textSize="14sp"
-            android:text="Up/Down: scroll • Left/Right/Back: close" />
+            android:orientation="horizontal"
+            android:gravity="end|center_vertical"
+            android:paddingTop="8dp">
+
+            <TextView
+                android:id="@+id/gemini_hint"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="#AAAAAA"
+                android:textSize="14sp"
+                android:text="Up/Down: scroll  •  Back: close" />
+
+            <Button
+                android:id="@+id/gemini_email_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Email Summary"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+        </LinearLayout>
     </LinearLayout>
 
 </FrameLayout>
+

@@ -28,6 +28,7 @@ public class GeminiSettingsPresenter {
 
         // Enable/disable
         List<OptionItem> enabled = new ArrayList<>();
+        enabled.add(UiOptionItem.from("Email summaries", opt -> data.setEmailSummariesEnabled(opt.isSelected()), data.isEmailSummariesEnabled()));
         enabled.add(UiOptionItem.from("Fact check summaries (uses web search)", opt -> data.setFactCheckEnabled(opt.isSelected()), data.isFactCheckEnabled()));
         enabled.add(UiOptionItem.from("Auto mark as watched on summary", opt -> data.setMarkAsWatchedEnabled(opt.isSelected()), data.isMarkAsWatchedEnabled()));
         dlg.appendCheckedCategory(context.getString(R.string.gemini_category_title), enabled);
@@ -98,7 +99,40 @@ public class GeminiSettingsPresenter {
         debug.add(UiOptionItem.from("Verbose logging", opt -> data.setDebugLogging(opt.isSelected()), data.isDebugLogging()));
         dlg.appendCheckedCategory("Debug", debug);
 
+        // Email settings
+        List<OptionItem> email = new ArrayList<>();
+        String currentEmail = data.getSummaryEmail();
+        email.add(UiOptionItem.from(
+                "Set summary email" + (currentEmail != null && !currentEmail.isEmpty() ? " (" + currentEmail + ")" : ""),
+                opt -> showEmailInputDialog(context, currentEmail),
+                false));
+        if (currentEmail != null && !currentEmail.isEmpty()) {
+            email.add(UiOptionItem.from("Clear summary email", opt -> data.setSummaryEmail(null), false));
+        }
+        dlg.appendStringsCategory("Email", email);
+
         dlg.showDialog(context.getString(R.string.gemini_settings_title), null);
+    }
+
+    private void showEmailInputDialog(Context ctx, String current) {
+        android.view.LayoutInflater inflater = android.view.LayoutInflater.from(ctx);
+        android.view.View view = inflater.inflate(com.liskovsoft.smartyoutubetv2.common.R.layout.simple_edit_dialog, null);
+        android.widget.EditText edit = view.findViewById(com.liskovsoft.smartyoutubetv2.common.R.id.simple_edit_value);
+        edit.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+        edit.setHint("email@example.com");
+        if (current != null) edit.setText(current);
+
+        new android.app.AlertDialog.Builder(ctx)
+                .setTitle("Summary email address")
+                .setView(view)
+                .setPositiveButton("Save", (d, w) -> {
+                    String value = edit.getText() != null ? edit.getText().toString().trim() : null;
+                    if (value != null && !value.isEmpty()) {
+                        data.setSummaryEmail(value);
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 }
 

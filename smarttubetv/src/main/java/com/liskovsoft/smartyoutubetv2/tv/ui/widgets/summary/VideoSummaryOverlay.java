@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Button;
 
 import com.liskovsoft.smartyoutubetv2.tv.R;
 
@@ -22,6 +23,7 @@ public class VideoSummaryOverlay {
     private TextView text;
     private ScrollView scroll;
     private View previousFocus;
+    private View emailBtn;
 
     public VideoSummaryOverlay(Activity activity) {
         this.activity = activity;
@@ -32,13 +34,23 @@ public class VideoSummaryOverlay {
         if (root != null) return;
         ViewGroup content = activity.findViewById(android.R.id.content);
         root = LayoutInflater.from(activity).inflate(R.layout.overlay_video_summary, content, false);
+        // Allow descendants (like the Email button) to receive focus
         if (root instanceof ViewGroup) {
-            ((ViewGroup) root).setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
+            ((ViewGroup) root).setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
         }
         progress = root.findViewById(R.id.gemini_progress);
         status = root.findViewById(R.id.gemini_status);
         text = root.findViewById(R.id.gemini_text);
         scroll = root.findViewById(R.id.gemini_scroll);
+        emailBtn = root.findViewById(R.id.gemini_email_btn);
+
+        if (emailBtn != null) {
+            emailBtn.setFocusable(true);
+            emailBtn.setFocusableInTouchMode(true);
+            emailBtn.setOnClickListener(v -> {
+                if (onEmailListener != null) onEmailListener.onEmail();
+            });
+        }
 
         root.setClickable(true);
         root.setFocusable(true);
@@ -48,9 +60,8 @@ public class VideoSummaryOverlay {
             switch (keyCode) {
                 case KeyEvent.KEYCODE_DPAD_CENTER:
                 case KeyEvent.KEYCODE_ENTER:
-                    if (onConfirmListener != null) onConfirmListener.onConfirm();
-                    hide();
-                    return true;
+                    // Let focused child (e.g., Email button) handle Select/Enter
+                    return false;
                 case KeyEvent.KEYCODE_DPAD_LEFT:
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
                 case KeyEvent.KEYCODE_BACK:
@@ -58,11 +69,23 @@ public class VideoSummaryOverlay {
                     hide();
                     return true;
                 case KeyEvent.KEYCODE_DPAD_UP:
+                    if (emailBtn != null && root.findFocus() == emailBtn) {
+                        // Move focus back to scrollable text when navigating up from button
+                        scroll.requestFocus();
+                        return true;
+                    }
                     scrollBy(-200);
                     return true;
                 case KeyEvent.KEYCODE_DPAD_DOWN:
-                    scrollBy(200);
-                    return true;
+                    if (scroll != null && scroll.canScrollVertically(1)) {
+                        scrollBy(200);
+                        return true;
+                    }
+                    if (emailBtn != null) {
+                        emailBtn.requestFocus();
+                        return true;
+                    }
+                    return false;
             }
             return false;
         });
@@ -111,6 +134,10 @@ public class VideoSummaryOverlay {
     }
     private OnConfirmListener onConfirmListener;
     public void setOnConfirmListener(OnConfirmListener l) { this.onConfirmListener = l; }
+
+    public interface OnEmailListener { void onEmail(); }
+    private OnEmailListener onEmailListener;
+    public void setOnEmailListener(OnEmailListener l) { this.onEmailListener = l; }
 
     
 }

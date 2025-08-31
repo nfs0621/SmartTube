@@ -22,6 +22,16 @@ public class VideoSummaryOverlay {
     private TextView text;
     private ScrollView scroll;
     private View previousFocus;
+    private View emailBtn;
+    public interface OnEmailListener { void onEmail(); }
+    private OnEmailListener onEmailListener;
+    public void setOnEmailListener(OnEmailListener l) { 
+        this.onEmailListener = l; 
+        // Show/hide email button based on whether listener is set
+        if (emailBtn != null) {
+            emailBtn.setVisibility(l != null ? View.VISIBLE : View.GONE);
+        }
+    }
     public interface OnConfirmListener { void onConfirm(); }
     private OnConfirmListener onConfirmListener;
     public void setOnConfirmListener(OnConfirmListener l) { this.onConfirmListener = l; }
@@ -47,33 +57,46 @@ public class VideoSummaryOverlay {
                 if (event.getAction() == KeyEvent.ACTION_DOWN) {
                     int keyCode = event.getKeyCode();
                     
-                    // Close overlay on back, left, right, or center/enter (OK button functionality removed)
+                    // Close overlay on back/left/right only; allow Select/Enter to reach focused child
                     if (keyCode == KeyEvent.KEYCODE_BACK || 
                         keyCode == KeyEvent.KEYCODE_DPAD_LEFT || 
-                        keyCode == KeyEvent.KEYCODE_DPAD_RIGHT ||
-                        keyCode == KeyEvent.KEYCODE_DPAD_CENTER || 
-                        keyCode == KeyEvent.KEYCODE_ENTER) {
+                        keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
                         hide();
                         return true;
                     }
                     // Scroll with up/down
                     else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+                        if (emailBtn != null && emailBtn.hasFocus()) {
+                            // Move focus back to scrollable text when navigating up from button
+                            scroll.requestFocus();
+                            return true;
+                        }
                         VideoSummaryOverlay.this.scrollBy(-200);
                         return true;
                     } else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-                        VideoSummaryOverlay.this.scrollBy(200);
-                        return true;
+                        if (scroll != null && scroll.canScrollVertically(1)) {
+                            VideoSummaryOverlay.this.scrollBy(200);
+                            return true;
+                        }
+                        if (emailBtn != null) {
+                            emailBtn.requestFocus();
+                            return true;
+                        }
+                        return false;
                     }
-                }
-                return super.dispatchKeyEvent(event);
+            }
+            return super.dispatchKeyEvent(event);
             }
         };
+
+        
         
         // Set layout params and properties on the custom root
         customRoot.setLayoutParams(root.getLayoutParams());
         customRoot.setClickable(true);
         customRoot.setFocusable(true);
         customRoot.setFocusableInTouchMode(true);
+        ((ViewGroup) customRoot).setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
         
         // Move all children from root to customRoot
         ViewGroup rootGroup = (ViewGroup) root;
@@ -84,6 +107,16 @@ public class VideoSummaryOverlay {
         }
         
         root = customRoot;
+        // Wire up Email button
+        emailBtn = root.findViewById(R.id.gemini_email_btn);
+        if (emailBtn != null) {
+            emailBtn.setOnClickListener(v -> { if (onEmailListener != null) onEmailListener.onEmail(); });
+            emailBtn.setFocusable(true);
+            emailBtn.setFocusableInTouchMode(true);
+            // Hide by default - will be shown when listener is set
+            emailBtn.setVisibility(View.GONE);
+        }
+
         content.addView(root);
     }
 

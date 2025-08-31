@@ -1,0 +1,26 @@
+```properties
+# gradle.properties (do not commit secrets)
+RELEASE_STORE_FILE=/abs/path/to/keystore.jks
+RELEASE_STORE_PASSWORD=****
+RELEASE_KEY_ALIAS=smarttube
+RELEASE_KEY_PASSWORD=****
+```
+Then wire these into `signingConfigs` in `smarttubetv/build.gradle` and run:
+```bash
+./gradlew :smarttubetv:assembleStstableRelease
+```
+
+### Code Style
+- No comments unless specifically requested
+- Follow existing Android TV Leanback patterns
+- Use existing utilities and libraries from the codebase
+- Maintain consistency with current architecture
+
+## Important Notes
+
+- Security: Never include API keys, secrets, or sensitive data in commits.
+- Compatibility: Android TV devices only — no phone/tablet/webOS/Tizen/iOS support.
+- Build Requirements: Prefer JDK 11 for Gradle daemon.
+- Git Submodules: Run `git submodule update --init --recursive` after cloning.
+- Version Control: Always increment version numbers for new builds.
+- APK Distribution: Only distribute through official channels, never app stores.

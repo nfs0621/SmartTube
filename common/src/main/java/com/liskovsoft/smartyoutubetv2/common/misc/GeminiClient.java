@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
  * Minimal Gemini client using REST API. Reads API key from assets/gemini.properties (API_KEY=...).
  */
 public class GeminiClient {
+    private String lastFactCheckError;
     
     private static class TranscriptResult {
         String transcript;
@@ -103,7 +104,7 @@ public class GeminiClient {
             String prompt = buildPrompt(title, author, videoId, detailLevel, transcript, transcriptSource, officialAvailable);
             try {
                 String summary = callGemini(prompt);
-                return appendFactCheckIfEnabled(summary, title, author, videoId);
+                return summary;
             } catch (IOException e) {
                 if (!TextUtils.isEmpty(transcript)) {
                     String[] chunks = splitTranscript(transcript, 12000);
@@ -115,7 +116,7 @@ public class GeminiClient {
                     }
                     String combine = "Summarize the following partial summaries into a single cohesive summary with the same format and header requirements.\n\n" + partials;
                     String summary = callGemini(combine);
-                    return appendFactCheckIfEnabled(summary, title, author, videoId);
+                    return summary;
                 }
                 throw e;
             }
@@ -149,17 +150,59 @@ public class GeminiClient {
             // Use proper API structure: pass URL as fileData, not in text prompt
             android.util.Log.d("GeminiClient", "Sending URL as fileData to Gemini API");
             String summary = callGemini(prompt, watchUrl);
-            return appendFactCheckIfEnabled(summary, title, author, videoId);
+            return summary;
+        }
+    }
+
+    /**
+     * Perform fact checking on an existing summary as a separate operation.
+     * This allows for async fact checking independent of summary generation.
+     */
+    public String factCheck(String summary, String title, String author, String videoId) {
+        try {
+            com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = 
+                    com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(
+                            com.liskovsoft.youtubeapi.app.AppService.instance().getContext());
+            
+            if (!gd.isFactCheckEnabled()) {
+                android.util.Log.d("GeminiClient", "Fact checking disabled");
+                return null;
+            }
+
+            android.util.Log.d("GeminiClient", "✓ PERFORMING standalone fact check for: " + title);
+            android.util.Log.d("GeminiClient", "Summary length: " + (summary != null ? summary.length() : "NULL") + " chars");
+            // Clear previous error
+            lastFactCheckError = null;
+            String factCheck = performFactCheck(summary, title, author, videoId);
+            android.util.Log.d("GeminiClient", "Fact check returned: " + (factCheck != null ? factCheck.length() + " chars" : "NULL"));
+            
+            if (!TextUtils.isEmpty(factCheck)) {
+                return factCheck;
+            }
+            
+            // Return error info if fact check failed
+            String model = gd.getModel();
+            String reason = !TextUtils.isEmpty(lastFactCheckError)
+                    ? lastFactCheckError
+                    : "empty response or tools not supported by selected model";
+            return "Fact Check: unavailable (model: " + model + ") — " + reason;
+        } catch (Exception e) {
+            android.util.Log.w("GeminiClient", "Fact check failed: " + e.getMessage());
+            String model = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData
+                    .instance(com.liskovsoft.youtubeapi.app.AppService.instance().getContext())
+                    .getModel();
+            String reason = e.getMessage() != null ? e.getMessage() : "unexpected error";
+            return "Fact Check: unavailable (model: " + model + ") — " + reason;
         }
     }
 
     private static String buildPrompt(String title, String author, String videoId, String detailLevel, String transcript, String transcriptSource, boolean officialAvailable) {
         StringBuilder sb = new StringBuilder();
         sb.append("You are an assistant for Android TV. Summarize this YouTube video for TV reading.\n");
-        sb.append("IMPORTANT: Start your response with a header line showing the detail level and sources used:\n");
-        sb.append("Format: '[Detail Level: " + capitalize(detailLevel) + "] [Source: " + 
-                  (transcriptSource != null ? transcriptSource : "Title/Metadata Only") + "] [Official CC Available: " + (officialAvailable ? "Yes" : "No") + "]'\n");
-        sb.append("Then add a blank line before the actual summary.\n\n");
+        sb.append("IMPORTANT: End your response with technical details at the bottom:\n");
+        sb.append("Format: '\\n---\\nDetail Level: " + capitalize(detailLevel) + " | Source: " + 
+                  (transcriptSource != null ? transcriptSource : "Title/Metadata Only") + " | Official CC Available: " + (officialAvailable ? "Yes" : "No") + "'\n");
+        sb.append("Start directly with the summary content (no header at the top).\n\n");
         
         // Add detail level specific instructions
         switch (detailLevel.toLowerCase()) {
@@ -825,32 +868,9 @@ public class GeminiClient {
         return out;
     }
 
-    private String appendFactCheckIfEnabled(String summary, String title, String author, String videoId) {
-        try {
-            com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = 
-                    com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(
-                            com.liskovsoft.youtubeapi.app.AppService.instance().getContext());
-            
-            if (!gd.isFactCheckEnabled()) {
-                android.util.Log.d("GeminiClient", "Fact checking disabled, returning summary as-is");
-                return summary;
-            }
-
-            android.util.Log.d("GeminiClient", "Fact checking enabled, performing web search fact check");
-            
-            String factCheck = performFactCheck(summary, title, author, videoId);
-            if (!TextUtils.isEmpty(factCheck)) {
-                return summary + "\n\n" + factCheck;
-            }
-            return summary;
-        } catch (Exception e) {
-            android.util.Log.w("GeminiClient", "Fact check failed: " + e.getMessage());
-            return summary;
-        }
-    }
 
     private String performFactCheck(String summary, String title, String author, String videoId) throws IOException, JSONException {
-        android.util.Log.d("GeminiClient", "Starting fact check for: " + title);
+        android.util.Log.d("GeminiClient", "🔍 Starting performFactCheck for: " + title);
         
         String factCheckPrompt = "Fact-check the following video summary using web search. " +
                 "Focus on verifying key claims, statistics, dates, and factual assertions. " +
@@ -859,15 +879,30 @@ public class GeminiClient {
                 "Video: " + title + (author != null ? " by " + author : "") + "\n\n" +
                 "Summary to fact-check:\n" + summary;
 
-        return callGeminiWithWebSearch(factCheckPrompt);
+        android.util.Log.d("GeminiClient", "📝 Calling Gemini with web search for fact check");
+        String result = callGeminiWithWebSearch(factCheckPrompt);
+        android.util.Log.d("GeminiClient", "🔍 Fact check complete, result: " + (result != null ? result.length() + " chars" : "NULL"));
+        return result;
     }
 
     private String callGeminiWithWebSearch(String prompt) throws IOException, JSONException {
+        android.util.Log.d("GeminiClient", "🌐 callGeminiWithWebSearch starting");
+        
         String userModel = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData
                 .instance(com.liskovsoft.youtubeapi.app.AppService.instance().getContext())
                 .getModel();
         
-        String model = "auto".equals(userModel) ? "gemini-2.0-flash-exp" : userModel;
+        // For fact checking with web search, use stable models that support tools
+        String model;
+        if ("auto".equals(userModel)) {
+            model = "gemini-2.5-flash"; // Use stable model for tools support
+        } else if ("gemini-2.0-flash-exp".equals(userModel)) {
+            model = "gemini-2.5-flash"; // Fallback to stable for experimental model
+        } else {
+            model = userModel;
+        }
+        
+        android.util.Log.d("GeminiClient", "🤖 Using model for fact check: " + model + " (user model: " + userModel + ")");
         
         JSONObject req = new JSONObject();
         JSONArray parts = new JSONArray();
@@ -880,7 +915,7 @@ public class GeminiClient {
         JSONObject tools = new JSONObject();
         JSONArray toolsArray = new JSONArray();
         JSONObject webSearchTool = new JSONObject();
-        webSearchTool.put("googleSearchRetrieval", new JSONObject());
+        webSearchTool.put("googleSearch", new JSONObject());
         toolsArray.put(webSearchTool);
         req.put("tools", toolsArray);
 
@@ -903,6 +938,9 @@ public class GeminiClient {
         String resp = readAll(is);
         if (code < 200 || code >= 300) {
             android.util.Log.w("GeminiClient", "Fact check HTTP " + code + ": " + resp);
+            // Store a concise reason for the caller to surface
+            String snippet = resp != null && resp.length() > 200 ? resp.substring(0, 200) + "…" : resp;
+            lastFactCheckError = "HTTP " + code + (snippet != null ? (": " + snippet) : "");
             return null;
         }
 
@@ -918,6 +956,7 @@ public class GeminiClient {
                 }
             }
         }
+        lastFactCheckError = "no text candidates returned";
         return null;
     }
 }

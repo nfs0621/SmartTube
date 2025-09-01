@@ -49,6 +49,21 @@ public class VideoSummaryOverlay {
         status = root.findViewById(R.id.gemini_status);
         text = root.findViewById(R.id.gemini_text);
         scroll = root.findViewById(R.id.gemini_scroll);
+        // Apply compact layout if enabled in settings
+        try {
+            com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(activity);
+            boolean compact = gd.isCompactLayout();
+            android.view.View panel = root.findViewById(R.id.gemini_panel);
+            if (panel != null && panel instanceof android.view.ViewGroup) {
+                int outerPad = compact ? dp(32) : dp(48);
+                ((android.view.ViewGroup) panel).setPadding(outerPad, outerPad, outerPad, outerPad);
+            }
+            status.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, compact ? 18 : 20);
+            text.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, compact ? 16 : 18);
+            text.setLineSpacing(compact ? dp(4) : dp(6), 1.0f);
+            android.widget.TextView hint = root.findViewById(R.id.gemini_hint);
+            if (hint != null) hint.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, compact ? 13 : 14);
+        } catch (Throwable ignored) {}
 
         // Create a custom FrameLayout to intercept key events
         android.widget.FrameLayout customRoot = new android.widget.FrameLayout(activity) {
@@ -93,6 +108,8 @@ public class VideoSummaryOverlay {
         
         // Set layout params and properties on the custom root
         customRoot.setLayoutParams(root.getLayoutParams());
+        // Preserve background (full-screen scrim) from inflated layout
+        try { customRoot.setBackground(root.getBackground()); } catch (Throwable ignored) {}
         customRoot.setClickable(true);
         customRoot.setFocusable(true);
         customRoot.setFocusableInTouchMode(true);
@@ -122,6 +139,10 @@ public class VideoSummaryOverlay {
 
     private void scrollBy(int dy) {
         scroll.smoothScrollBy(0, dy);
+    }
+
+    private int dp(int v) {
+        return (int) (v * activity.getResources().getDisplayMetrics().density);
     }
 
     public void showLoading(CharSequence workingText) {
@@ -154,4 +175,3 @@ public class VideoSummaryOverlay {
         return root != null && root.getVisibility() == View.VISIBLE;
     }
 }
-

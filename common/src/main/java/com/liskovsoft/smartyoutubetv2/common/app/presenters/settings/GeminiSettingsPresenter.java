@@ -110,6 +110,11 @@ public class GeminiSettingsPresenter {
         // Future: add "Recent comments"
         dlg.appendRadioCategory("Comments source", commentsSource);
 
+        // Layout
+        List<OptionItem> layout = new ArrayList<>();
+        layout.add(UiOptionItem.from("Compact layout (smaller text, tighter spacing)", opt -> data.setCompactLayout(opt.isSelected()), data.isCompactLayout()));
+        dlg.appendCheckedCategory("Layout", layout);
+
         // Verbose logging
         List<OptionItem> debug = new ArrayList<>();
         debug.add(UiOptionItem.from("Verbose logging", opt -> data.setDebugLogging(opt.isSelected()), data.isDebugLogging()));

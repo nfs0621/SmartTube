@@ -1028,7 +1028,9 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                     
                     // Show the summary on the UI thread using the proper overlay
                     activity.runOnUiThread(() -> {
-                        summaryOverlay.showText(finalTitle, finalSummary);
+                        String formatted = beautifySummaryText(finalSummary);
+                        CharSequence styled = styleSummary(formatted);
+                        summaryOverlay.showText("🧠 " + finalTitle, styled);
                         
                         // Set up async fact checking and email functionality
                         setupSummaryOverlayActions(summaryOverlay, finalSummary, video, gemini, activity);
@@ -1041,6 +1043,51 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                 }
             }).start();
         }
+    }
+
+    // Simple beautifier to enhance readability: convert ASCII bullets to dot bullets,
+    // add a bit of spacing around section dividers, and normalize line breaks.
+    private static String beautifySummaryText(String text) {
+        if (text == null) return null;
+        try {
+            String out = text;
+            // Convert leading hyphen bullets to •
+            out = out.replaceAll("(?m)^-\\s+", "• ");
+            // Normalize three dashes divider to a nicer break
+            out = out.replaceAll("(?m)^---$", "\n────────────────\n");
+            // Ensure separators before well-known sections
+            out = out.replaceFirst("(?m)^[💬] Comments Summary", "────────────────\n💬 Comments Summary");
+            out = out.replaceFirst("(?m)^\\*\\*Fact Check Results:\\*\\*", "────────────────\n**Fact Check Results:**");
+            // Compact excessive blank lines
+            out = out.replaceAll("\n{3,}", "\n\n");
+            return out.trim();
+        } catch (Throwable t) {
+            return text;
+        }
+    }
+
+    // Style headings with accent color and bold; keep body readable.
+    private static CharSequence styleSummary(String text) {
+        if (text == null) return null;
+        android.text.SpannableStringBuilder ssb = new android.text.SpannableStringBuilder(text);
+        int len = ssb.length();
+        int start = 0;
+        int accent = android.graphics.Color.parseColor("#86C5FF");
+        while (start < len) {
+            int lineEnd = android.text.TextUtils.indexOf(ssb, '\n', start);
+            if (lineEnd < 0) lineEnd = len;
+            // Detect headings
+            CharSequence line = ssb.subSequence(start, lineEnd);
+            String s = line.toString();
+            boolean isHeading = s.startsWith("🧠") || s.startsWith("💬") || s.startsWith("🔍") || s.startsWith("Comments Summary") || s.startsWith("**Fact Check Results:**");
+            if (isHeading) {
+                ssb.setSpan(new android.text.style.ForegroundColorSpan(accent), start, lineEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), start, lineEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new android.text.style.RelativeSizeSpan(1.06f), start, lineEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            start = lineEnd + 1;
+        }
+        return ssb;
     }
 
     /**
@@ -1141,11 +1188,12 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                         StringBuilder content = new StringBuilder();
                         content.append(summary);
                         if (commentsRef.get() != null) {
-                            // Add a clear section header so users can see it was appended
-                            content.append("\n\n").append("Comments Summary\n").append(commentsRef.get());
+                            content.append("\n\n").append("💬 Comments Summary\n").append(commentsRef.get());
                         }
-                        if (factRef.get() != null) content.append("\n\n").append(factRef.get());
-                        summaryOverlay.showText("Gemini Summary", content.toString());
+                        if (factRef.get() != null) content.append("\n\n").append("🔍 ").append(factRef.get());
+                        String formatted = beautifySummaryText(content.toString());
+                        CharSequence styled = styleSummary(formatted);
+                        summaryOverlay.showText("🧠 Gemini Summary", styled);
                     });
                 } catch (Throwable t) {
                     android.util.Log.w("VideoMenuPresenter", "Comments summary failed: " + t.getMessage());
@@ -1174,9 +1222,11 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                             factRef.set(factCheckResult);
                             StringBuilder content = new StringBuilder();
                             content.append(summary);
-                            if (commentsRef.get() != null) content.append("\n\n").append(commentsRef.get());
-                            content.append("\n\n").append(factRef.get());
-                            summaryOverlay.showText("Gemini Summary", content.toString());
+                            if (commentsRef.get() != null) content.append("\n\n").append("💬 Comments Summary\n").append(commentsRef.get());
+                            content.append("\n\n").append("🔍 ").append(factRef.get());
+                            String formatted = beautifySummaryText(content.toString());
+                            CharSequence styled = styleSummary(formatted);
+                            summaryOverlay.showText("🧠 Gemini Summary", styled);
                             android.util.Log.d("VideoMenuPresenter", "Fact check completed and overlay updated");
                         });
                     } else {

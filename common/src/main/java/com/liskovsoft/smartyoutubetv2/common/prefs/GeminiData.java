@@ -15,6 +15,7 @@ public class GeminiData {
     private static final String KEY_MARK_WATCHED = "gemini_mark_watched"; // mark as watched on summary
     private static final String KEY_SUMMARY_EMAIL = "gemini_summary_email"; // recipient email for summaries
     private static final String KEY_EMAIL_SUMMARIES_ENABLED = "gemini_email_summaries_enabled"; // email summaries feature enabled
+    private static final String KEY_COMPACT_LAYOUT = "gemini_compact_layout"; // compact UI layout for overlays
     // Comments summary
     private static final String KEY_COMMENTS_SUMMARY_ENABLED = "gemini_comments_summary_enabled";
     private static final String KEY_COMMENTS_MAX = "gemini_comments_max";
@@ -123,6 +124,15 @@ public class GeminiData {
 
     public void setEmailSummariesEnabled(boolean enabled) {
         mPrefs.putBoolean(KEY_EMAIL_SUMMARIES_ENABLED, enabled);
+    }
+
+    // UI: Compact layout
+    public boolean isCompactLayout() {
+        return mPrefs.getBoolean(KEY_COMPACT_LAYOUT, false);
+    }
+
+    public void setCompactLayout(boolean compact) {
+        mPrefs.putBoolean(KEY_COMPACT_LAYOUT, compact);
     }
 
     // Comments summary prefs

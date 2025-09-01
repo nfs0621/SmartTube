@@ -31,6 +31,7 @@ public class GeminiSettingsPresenter {
         enabled.add(UiOptionItem.from("Email summaries", opt -> data.setEmailSummariesEnabled(opt.isSelected()), data.isEmailSummariesEnabled()));
         enabled.add(UiOptionItem.from("Fact check summaries (uses web search)", opt -> data.setFactCheckEnabled(opt.isSelected()), data.isFactCheckEnabled()));
         enabled.add(UiOptionItem.from("Auto mark as watched on summary", opt -> data.setMarkAsWatchedEnabled(opt.isSelected()), data.isMarkAsWatchedEnabled()));
+        enabled.add(UiOptionItem.from("Summarize comments in overlay", opt -> data.setCommentsSummaryEnabled(opt.isSelected()), data.isCommentsSummaryEnabled()));
         dlg.appendCheckedCategory(context.getString(R.string.gemini_category_title), enabled);
 
         // Delay options removed (no auto-summary)
@@ -93,6 +94,21 @@ public class GeminiSettingsPresenter {
         String curLang = data.getPreferredLanguage();
         langs.add(UiOptionItem.from("English", opt -> data.setPreferredLanguage("en"), "en".equalsIgnoreCase(curLang)));
         dlg.appendRadioCategory("Preferred transcript language", langs);
+
+        // Comments summary settings
+        List<OptionItem> commentsMax = new ArrayList<>();
+        int curMaxComments = data.getCommentsMaxCount();
+        commentsMax.add(UiOptionItem.from("10", opt -> data.setCommentsMaxCount(10), curMaxComments == 10));
+        commentsMax.add(UiOptionItem.from("25", opt -> data.setCommentsMaxCount(25), curMaxComments == 25));
+        commentsMax.add(UiOptionItem.from("50 (default)", opt -> data.setCommentsMaxCount(50), curMaxComments == 50));
+        commentsMax.add(UiOptionItem.from("100", opt -> data.setCommentsMaxCount(100), curMaxComments == 100));
+        dlg.appendRadioCategory("Max comments to analyze", commentsMax);
+
+        List<OptionItem> commentsSource = new ArrayList<>();
+        String curSource = data.getCommentsSource();
+        commentsSource.add(UiOptionItem.from("Top comments", opt -> data.setCommentsSource("top"), "top".equalsIgnoreCase(curSource)));
+        // Future: add "Recent comments"
+        dlg.appendRadioCategory("Comments source", commentsSource);
 
         // Verbose logging
         List<OptionItem> debug = new ArrayList<>();

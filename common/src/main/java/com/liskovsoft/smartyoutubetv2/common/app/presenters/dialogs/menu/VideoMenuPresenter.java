@@ -1055,6 +1055,10 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
         com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = 
             com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
         
+        // Content segments accumulator to preserve ordering: Main → Comments → Fact check
+        final java.util.concurrent.atomic.AtomicReference<String> commentsRef = new java.util.concurrent.atomic.AtomicReference<>(null);
+        final java.util.concurrent.atomic.AtomicReference<String> factRef = new java.util.concurrent.atomic.AtomicReference<>(null);
+
         // Set up email functionality (if enabled)
         if (gd.isEmailSummariesEnabled()) {
             summaryOverlay.setOnEmailListener(() -> {
@@ -1091,6 +1095,64 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
             summaryOverlay.setOnEmailListener(null);
         }
 
+        // Summarize comments (async) if enabled
+        if (gd.isCommentsSummaryEnabled()) {
+            new Thread(() -> {
+                try {
+                    // Fetch comments key from metadata (blocking)
+                    com.liskovsoft.mediaserviceinterfaces.data.MediaItemMetadata md = mMediaItemService.getMetadata(video.videoId);
+                    String commentsKey = md != null ? md.getCommentsKey() : null;
+                    if (commentsKey == null) return; // no comments
+
+                    java.util.List<String> texts = new java.util.ArrayList<>();
+                    java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+                    io.reactivex.disposables.Disposable[] holder = new io.reactivex.disposables.Disposable[1];
+                    holder[0] = getCommentsService().getCommentsObserve(commentsKey)
+                            .subscribe(group -> {
+                                try {
+                                    if (group != null && group.getComments() != null) {
+                                        int max = gd.getCommentsMaxCount();
+                                        int count = 0;
+                                        for (com.liskovsoft.mediaserviceinterfaces.data.CommentItem item : group.getComments()) {
+                                            if (item == null || item.getMessage() == null) continue;
+                                            texts.add(item.getMessage());
+                                            count++;
+                                            if (count >= max) break;
+                                        }
+                                    }
+                                } finally {
+                                    if (holder[0] != null) holder[0].dispose();
+                                    latch.countDown();
+                                }
+                            }, err -> {
+                                if (holder[0] != null) holder[0].dispose();
+                                latch.countDown();
+                            });
+                    // Wait for first page (fetch can be slow on some videos/networks)
+                    latch.await(20, java.util.concurrent.TimeUnit.SECONDS);
+
+                    if (texts.isEmpty()) return;
+                    android.util.Log.d("VideoMenuPresenter", "Comments collected for summary: " + texts.size());
+                    String csum = gemini.summarizeComments(video.title, video.author, video.videoId, texts, Math.min(texts.size(), gd.getCommentsMaxCount()));
+                    if (csum == null || csum.isEmpty()) return;
+                    commentsRef.set(csum);
+
+                    activity.runOnUiThread(() -> {
+                        StringBuilder content = new StringBuilder();
+                        content.append(summary);
+                        if (commentsRef.get() != null) {
+                            // Add a clear section header so users can see it was appended
+                            content.append("\n\n").append("Comments Summary\n").append(commentsRef.get());
+                        }
+                        if (factRef.get() != null) content.append("\n\n").append(factRef.get());
+                        summaryOverlay.showText("Gemini Summary", content.toString());
+                    });
+                } catch (Throwable t) {
+                    android.util.Log.w("VideoMenuPresenter", "Comments summary failed: " + t.getMessage());
+                }
+            }).start();
+        }
+
         // Set up fact check functionality (async, on-demand)
         android.util.Log.d("VideoMenuPresenter", "Checking fact check setting: " + gd.isFactCheckEnabled());
         if (gd.isFactCheckEnabled()) {
@@ -1109,8 +1171,12 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                     if (factCheckResult != null && !factCheckResult.isEmpty()) {
                         // Update overlay with fact check results
                         activity.runOnUiThread(() -> {
-                            String updatedContent = summary + "\n\n" + factCheckResult;
-                            summaryOverlay.showText("Gemini Summary", updatedContent);
+                            factRef.set(factCheckResult);
+                            StringBuilder content = new StringBuilder();
+                            content.append(summary);
+                            if (commentsRef.get() != null) content.append("\n\n").append(commentsRef.get());
+                            content.append("\n\n").append(factRef.get());
+                            summaryOverlay.showText("Gemini Summary", content.toString());
                             android.util.Log.d("VideoMenuPresenter", "Fact check completed and overlay updated");
                         });
                     } else {

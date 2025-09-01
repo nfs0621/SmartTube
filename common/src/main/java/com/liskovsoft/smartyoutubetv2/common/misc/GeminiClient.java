@@ -959,5 +959,40 @@ public class GeminiClient {
         lastFactCheckError = "no text candidates returned";
         return null;
     }
+    
+    /**
+     * Summarize a list of viewer comments. Keeps the output concise and focused on themes.
+     */
+    public String summarizeComments(String videoTitle, String author, String videoId, java.util.List<String> comments, int analyzedCount) throws IOException, JSONException {
+        if (comments == null || comments.isEmpty()) {
+            return null;
+        }
+
+        // Trim each comment to reduce prompt size
+        StringBuilder sb = new StringBuilder();
+        android.util.Log.d("GeminiClient", "Summarizing comments: count=" + comments.size() + ", analyzed=" + analyzedCount);
+        sb.append("You are summarizing viewer comments for an Android TV overlay.\n");
+        sb.append("Provide a concise 'Comments Summary' with: common themes, consensus, notable insights, disagreements, sentiment, and useful viewer tips.\n");
+        sb.append("Avoid quoting long texts; no personal data; be neutral.\n");
+        sb.append("Keep it brief and skimmable (bullet points preferred).\n\n");
+        if (!android.text.TextUtils.isEmpty(videoTitle)) sb.append("Video: ").append(videoTitle).append("\n");
+        if (!android.text.TextUtils.isEmpty(author)) sb.append("Channel: ").append(author).append("\n");
+        if (!android.text.TextUtils.isEmpty(videoId)) sb.append("VideoID: ").append(videoId).append("\n\n");
+
+        sb.append("Sample of top comments (truncated):\n");
+        int perLen = 220; // hard cap per comment snippet (keep prompt tighter)
+        for (String c : comments) {
+            if (c == null) continue;
+            String t = c.trim();
+            if (t.isEmpty()) continue;
+            if (t.length() > perLen) t = t.substring(0, perLen) + "…";
+            sb.append("- ").append(t.replace('\n', ' ')).append("\n");
+        }
+        sb.append("\nNow produce the Comments Summary.\n");
+        sb.append("End with a footer line: '--- Comments analyzed: ").append(analyzedCount).append("'.");
+        String prompt = sb.toString();
+        android.util.Log.d("GeminiClient", "Comments prompt size chars=" + prompt.length());
+        return callGemini(prompt);
+    }
 }
 

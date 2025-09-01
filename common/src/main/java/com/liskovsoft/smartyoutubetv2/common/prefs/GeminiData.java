@@ -15,6 +15,10 @@ public class GeminiData {
     private static final String KEY_MARK_WATCHED = "gemini_mark_watched"; // mark as watched on summary
     private static final String KEY_SUMMARY_EMAIL = "gemini_summary_email"; // recipient email for summaries
     private static final String KEY_EMAIL_SUMMARIES_ENABLED = "gemini_email_summaries_enabled"; // email summaries feature enabled
+    // Comments summary
+    private static final String KEY_COMMENTS_SUMMARY_ENABLED = "gemini_comments_summary_enabled";
+    private static final String KEY_COMMENTS_MAX = "gemini_comments_max";
+    private static final String KEY_COMMENTS_SOURCE = "gemini_comments_source"; // "top" (default), reserved for future
     @SuppressLint("StaticFieldLeak")
     private static GeminiData sInstance;
     private final AppPrefs mPrefs;
@@ -119,6 +123,32 @@ public class GeminiData {
 
     public void setEmailSummariesEnabled(boolean enabled) {
         mPrefs.putBoolean(KEY_EMAIL_SUMMARIES_ENABLED, enabled);
+    }
+
+    // Comments summary prefs
+    public boolean isCommentsSummaryEnabled() {
+        return mPrefs.getBoolean(KEY_COMMENTS_SUMMARY_ENABLED, false);
+    }
+
+    public void setCommentsSummaryEnabled(boolean enabled) {
+        mPrefs.putBoolean(KEY_COMMENTS_SUMMARY_ENABLED, enabled);
+    }
+
+    public int getCommentsMaxCount() {
+        // Default to 50 as requested
+        return mPrefs.getInt(KEY_COMMENTS_MAX, 50);
+    }
+
+    public void setCommentsMaxCount(int count) {
+        mPrefs.putInt(KEY_COMMENTS_MAX, count);
+    }
+
+    public String getCommentsSource() {
+        return mPrefs.getString(KEY_COMMENTS_SOURCE, "top");
+    }
+
+    public void setCommentsSource(String source) {
+        mPrefs.putString(KEY_COMMENTS_SOURCE, source);
     }
 }
 

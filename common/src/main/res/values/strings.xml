@@ -720,4 +720,8 @@
     <string name="gemini_source_mode_title">Summary Source</string>
     <string name="gemini_source_mode_url">Ask Gemini to watch video (URL)</string>
     <string name="gemini_source_mode_transcript">Use Transcript/Closed Captions</string>
+    <string name="gemini_comments_summarize_toggle">Summarize comments in overlay</string>
+    <string name="gemini_comments_max_title">Max comments to analyze</string>
+    <string name="gemini_comments_source_title">Comments source</string>
+    <string name="gemini_comments_source_top">Top comments</string>
 </resources>

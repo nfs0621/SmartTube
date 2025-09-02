@@ -29,6 +29,9 @@ public class OpenAIClient implements AIClient {
     private final Context ctx;
     private final String apiKey;
     private String lastUsedModel;
+    private Integer lastPromptTokens;
+    private Integer lastCompletionTokens;
+    private Integer lastTotalTokens;
 
     public OpenAIClient(Context context) {
         this.ctx = context.getApplicationContext();
@@ -44,6 +47,10 @@ public class OpenAIClient implements AIClient {
     public String getLastUsedModel() {
         return lastUsedModel != null ? lastUsedModel : getModel();
     }
+
+    public Integer getLastPromptTokens() { return lastPromptTokens; }
+    public Integer getLastCompletionTokens() { return lastCompletionTokens; }
+    public Integer getLastTotalTokens() { return lastTotalTokens; }
 
     private String getModel() {
         com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(ctx);
@@ -217,10 +224,25 @@ public class OpenAIClient implements AIClient {
             if (choice != null) {
                 JSONObject msg = choice.optJSONObject("message");
                 if (msg != null) {
+                    // Usage parsing
+                    try {
+                        JSONObject usage = json.optJSONObject("usage");
+                        if (usage != null) {
+                            lastPromptTokens = usage.has("prompt_tokens") ? usage.optInt("prompt_tokens") : null;
+                            lastCompletionTokens = usage.has("completion_tokens") ? usage.optInt("completion_tokens") : null;
+                            lastTotalTokens = usage.has("total_tokens") ? usage.optInt("total_tokens") : null;
+                        } else {
+                            lastPromptTokens = lastCompletionTokens = lastTotalTokens = null;
+                        }
+                    } catch (Throwable ignore) {
+                        lastPromptTokens = lastCompletionTokens = lastTotalTokens = null;
+                    }
                     return msg.optString("content", resp);
                 }
             }
         }
+        // Reset usage if not found
+        lastPromptTokens = lastCompletionTokens = lastTotalTokens = null;
         return resp;
     }
 

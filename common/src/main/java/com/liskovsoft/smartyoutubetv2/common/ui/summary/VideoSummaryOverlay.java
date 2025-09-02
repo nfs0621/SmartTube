@@ -23,6 +23,7 @@ public class VideoSummaryOverlay {
     private ScrollView scroll;
     private View previousFocus;
     private View emailBtn;
+    private TextView footerMeta;
     public interface OnEmailListener { void onEmail(); }
     private OnEmailListener onEmailListener;
     public void setOnEmailListener(OnEmailListener l) { 
@@ -49,6 +50,7 @@ public class VideoSummaryOverlay {
         status = root.findViewById(R.id.gemini_status);
         text = root.findViewById(R.id.gemini_text);
         scroll = root.findViewById(R.id.gemini_scroll);
+        footerMeta = root.findViewById(R.id.gemini_footer_meta);
         // Apply compact layout if enabled in settings
         try {
             com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(activity);
@@ -162,6 +164,14 @@ public class VideoSummaryOverlay {
         text.setText(body);
         handler.post(() -> scroll.scrollTo(0, 0));
         root.requestFocus(); // Ensure overlay keeps focus for D-pad navigation
+    }
+
+    public void setFooterMeta(CharSequence meta) {
+        ensureInflated();
+        if (footerMeta != null) {
+            footerMeta.setText(meta != null ? meta : "");
+            footerMeta.setVisibility(meta != null && meta.length() > 0 ? View.VISIBLE : View.GONE);
+        }
     }
 
     public void hide() {

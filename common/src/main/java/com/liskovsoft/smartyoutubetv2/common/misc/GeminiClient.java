@@ -43,6 +43,9 @@ public class GeminiClient implements AIClient {
     private final String prefLang;
     private final boolean debug;
     private String lastUsedModel;
+    private Integer lastPromptTokens;
+    private Integer lastCandidatesTokens;
+    private Integer lastTotalTokens;
 
     public GeminiClient(Context context) {
         this.apiKey = loadApiKey(context);
@@ -58,6 +61,10 @@ public class GeminiClient implements AIClient {
     public String getLastUsedModel() {
         return lastUsedModel != null ? lastUsedModel : MODEL;
     }
+
+    public Integer getLastPromptTokens() { return lastPromptTokens; }
+    public Integer getLastCompletionTokens() { return lastCandidatesTokens; }
+    public Integer getLastTotalTokens() { return lastTotalTokens; }
 
     public String summarize(String title, String author, String videoId) throws IOException, JSONException {
         return summarize(title, author, videoId, "moderate");
@@ -847,11 +854,26 @@ public class GeminiClient implements AIClient {
                     String summaryText = partsResp.getJSONObject(0).optString("text", resp);
                     // Store the model used for this response
                     lastUsedModel = model;
+                    // Parse usage metadata when available
+                    try {
+                        JSONObject usage = json.optJSONObject("usageMetadata");
+                        if (usage != null) {
+                            lastPromptTokens = usage.has("promptTokenCount") ? usage.optInt("promptTokenCount") : null;
+                            lastCandidatesTokens = usage.has("candidatesTokenCount") ? usage.optInt("candidatesTokenCount") : null;
+                            lastTotalTokens = usage.has("totalTokenCount") ? usage.optInt("totalTokenCount") : null;
+                        } else {
+                            lastPromptTokens = lastCandidatesTokens = lastTotalTokens = null;
+                        }
+                    } catch (Throwable ignore) {
+                        lastPromptTokens = lastCandidatesTokens = lastTotalTokens = null;
+                    }
                     return summaryText;
                 }
             }
         }
         lastUsedModel = model;
+        // Reset usage if not found
+        lastPromptTokens = lastCandidatesTokens = lastTotalTokens = null;
         return resp;
     }
 

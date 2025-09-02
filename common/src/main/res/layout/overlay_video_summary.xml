@@ -111,6 +111,18 @@
                     android:focusable="true"
                     android:focusableInTouchMode="true" />
             </LinearLayout>
+
+            <!-- Footer metadata line: AI Provider / Model / Time / Tokens -->
+            <TextView
+                android:id="@+id/gemini_footer_meta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="#99FFFFFF"
+                android:textSize="13sp"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:text="" />
         </LinearLayout>
     </LinearLayout>
 

@@ -1000,21 +1000,45 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                     String provider = gd.getProvider();
                     com.liskovsoft.smartyoutubetv2.common.misc.AIClient ai;
                     if ("openai".equalsIgnoreCase(provider)) {
+                        // Respect user's provider choice; don't silently fallback
                         ai = new com.liskovsoft.smartyoutubetv2.common.misc.OpenAIClient(getContext());
-                        if (!ai.isConfigured()) {
-                            // Fallback to Gemini if OpenAI key not set
-                            ai = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
-                        }
                     } else {
                         ai = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
                     }
                     
                     String summary;
                     String title = "AI Summary";
+                    long t0 = 0L;
+                    long summaryDurationMs = 0L;
+                    Integer promptTok = null, complTok = null, totalTok = null;
+                    String modelUsed = null;
                     
                     if (ai.isConfigured()) {
                         int startSec = Math.max(0, video.startTimeSeconds);
+                        t0 = System.currentTimeMillis();
                         summary = ai.summarize(video.title, video.author, video.videoId, detailLevel, startSec, mode);
+                        summaryDurationMs = System.currentTimeMillis() - t0;
+                        modelUsed = ai.getLastUsedModel();
+                        try {
+                            if (ai instanceof com.liskovsoft.smartyoutubetv2.common.misc.OpenAIClient) {
+                                com.liskovsoft.smartyoutubetv2.common.misc.OpenAIClient oc = (com.liskovsoft.smartyoutubetv2.common.misc.OpenAIClient) ai;
+                                promptTok = oc.getLastPromptTokens();
+                                complTok = oc.getLastCompletionTokens();
+                                totalTok = oc.getLastTotalTokens();
+                            } else if (ai instanceof com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient) {
+                                com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient gc = (com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient) ai;
+                                promptTok = gc.getLastPromptTokens();
+                                complTok = gc.getLastCompletionTokens();
+                                totalTok = gc.getLastTotalTokens();
+                            }
+                        } catch (Throwable ignore) { }
+                        // Append runtime footer meta directly into the summary body so it appears before Comments/Fact Check
+                        try {
+                            String __meta = buildFooterMeta(provider != null ? provider : "gemini", modelUsed, summaryDurationMs, promptTok, complTok, totalTok);
+                            if (__meta != null && !__meta.isEmpty()) {
+                                summary = (summary != null ? summary : "") + "\n\n---\n" + __meta;
+                            }
+                        } catch (Throwable ignore) { }
                         // Keep title simple - details moved to bottom of summary
                         title = "AI Summary";
                         
@@ -1047,12 +1071,17 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                     
                     final String finalSummary = summary;
                     final String finalTitle = title;
+                    final long finalDurationMs = summaryDurationMs;
+                    final String finalProvider = provider != null ? provider : "gemini";
+                    final String finalModelUsed = modelUsed;
+                    final Integer finalPromptTok = promptTok, finalComplTok = complTok, finalTotalTok = totalTok;
                     
                     // Show the summary on the UI thread using the proper overlay
                     activity.runOnUiThread(() -> {
                         String formatted = beautifySummaryText(finalSummary);
                         CharSequence styled = styleSummary(formatted);
                         summaryOverlay.showText("🧠 " + finalTitle, styled);
+                        
                         
                         // Set up async fact checking and email functionality
                         setupSummaryOverlayActions(summaryOverlay, finalSummary, video, new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext()), activity);
@@ -1137,10 +1166,10 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
      * This implements the new async two-stage process: summary first, then fact check on demand.
      */
     private void setupSummaryOverlayActions(com.liskovsoft.smartyoutubetv2.common.ui.summary.VideoSummaryOverlay summaryOverlay, 
-                                          String summary, 
-                                          com.liskovsoft.smartyoutubetv2.common.app.models.data.Video video,
-                                          com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient gemini,
-                                          android.app.Activity activity) {
+                                           String summary, 
+                                           com.liskovsoft.smartyoutubetv2.common.app.models.data.Video video,
+                                           com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient gemini,
+                                           android.app.Activity activity) {
         com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = 
             com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
         
@@ -1295,5 +1324,36 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
         } else {
             android.util.Log.w("VideoMenuPresenter", "✗ Fact checking DISABLED in settings - not starting fact check");
         }
+    }
+
+    private static String buildFooterMeta(String provider, String model, long durationMs,
+                                          Integer promptTok, Integer complTok, Integer totalTok) {
+        String prov = provider == null ? "" : provider.trim();
+        if (prov.isEmpty()) prov = "gemini";
+        String provNice = Character.toUpperCase(prov.charAt(0)) + prov.substring(1).toLowerCase();
+        String mdl = model != null ? model : "";
+        // Time formatting
+        String timeStr;
+        if (durationMs >= 1000) {
+            double secs = durationMs / 1000.0;
+            timeStr = String.format(java.util.Locale.US, "%.1fs", secs);
+        } else {
+            timeStr = durationMs + "ms";
+        }
+        // Tokens formatting
+        Integer tot = totalTok;
+        if (tot == null && promptTok != null && complTok != null) tot = promptTok + complTok;
+        String tokensStr;
+        if (tot != null) {
+            if (promptTok != null && complTok != null) tokensStr = String.format(java.util.Locale.US, "%d (%d+%d)", tot, promptTok, complTok);
+            else tokensStr = String.valueOf(tot);
+        } else if (promptTok != null || complTok != null) {
+            String p = promptTok != null ? String.valueOf(promptTok) : "?";
+            String c = complTok != null ? String.valueOf(complTok) : "?";
+            tokensStr = p + "+" + c;
+        } else {
+            tokensStr = "n/a";
+        }
+        return "AI Provider: " + provNice + " • AI Model: " + mdl + " • Time: " + timeStr + " • Tokens: " + tokensStr;
     }
 }

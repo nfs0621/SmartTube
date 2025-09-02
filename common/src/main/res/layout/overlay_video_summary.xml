@@ -51,7 +51,7 @@
                     android:textColor="#FFFFFF"
                     android:textSize="20sp"
                     android:textStyle="bold"
-                    android:text="🧠 Gemini Summary" />
+                    android:text="🧠 AI Summary" />
 
                 <!-- Placeholder for potential future actions -->
             </LinearLayout>

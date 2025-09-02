@@ -58,28 +58,56 @@ public class GeminiSettingsPresenter {
                 "transcript".equalsIgnoreCase(currentMode)));
         dlg.appendRadioCategory(context.getString(R.string.gemini_source_mode_title), modes);
 
-        // AI Model selection
-        List<OptionItem> models = new ArrayList<>();
-        String currentModel = data.getModel();
-        models.add(UiOptionItem.from("Auto (2.0-flash-exp → 2.5-flash fallback)", 
-                opt -> data.setModel("auto"), 
-                "auto".equals(currentModel)));
-        models.add(UiOptionItem.from("Gemini 2.0 Flash Experimental", 
-                opt -> data.setModel("gemini-2.0-flash-exp"), 
-                "gemini-2.0-flash-exp".equals(currentModel)));
-        models.add(UiOptionItem.from("Gemini 2.5 Flash", 
-                opt -> data.setModel("gemini-2.5-flash"), 
-                "gemini-2.5-flash".equals(currentModel)));
-        models.add(UiOptionItem.from("Gemini 1.5 Flash", 
-                opt -> data.setModel("gemini-1.5-flash"), 
-                "gemini-1.5-flash".equals(currentModel)));
-        models.add(UiOptionItem.from("Gemini 1.5 Pro", 
-                opt -> data.setModel("gemini-1.5-pro"), 
-                "gemini-1.5-pro".equals(currentModel)));
-        models.add(UiOptionItem.from("Gemini 1.0 Pro", 
-                opt -> data.setModel("gemini-1.0-pro"), 
-                "gemini-1.0-pro".equals(currentModel)));
-        dlg.appendRadioCategory("AI Model", models);
+        // Provider selection
+        List<OptionItem> providers = new ArrayList<>();
+        String curProvider = data.getProvider();
+        providers.add(UiOptionItem.from("OpenAI", opt -> data.setProvider("openai"), "openai".equalsIgnoreCase(curProvider)));
+        providers.add(UiOptionItem.from("Google (Gemini)", opt -> data.setProvider("gemini"), "gemini".equalsIgnoreCase(curProvider)));
+        dlg.appendRadioCategory("AI Provider", providers);
+
+        // AI Model selection (depends on provider)
+        if ("openai".equalsIgnoreCase(curProvider)) {
+            List<OptionItem> oModels = new ArrayList<>();
+            String c = data.getOpenAIModel();
+            oModels.add(UiOptionItem.from("GPT‑5 Mini (default)", opt -> data.setOpenAIModel("gpt5-mini"), "gpt5-mini".equalsIgnoreCase(c)));
+            oModels.add(UiOptionItem.from("GPT‑5", opt -> data.setOpenAIModel("gpt5"), "gpt5".equalsIgnoreCase(c)));
+            oModels.add(UiOptionItem.from("GPT‑5 Nano", opt -> data.setOpenAIModel("gpt5-nano"), "gpt5-nano".equalsIgnoreCase(c)));
+            dlg.appendRadioCategory("AI Model", oModels);
+
+            // Advanced: custom model id override
+            List<OptionItem> oAdvanced = new ArrayList<>();
+            String currentCustom = data.getOpenAICustomModel();
+            oAdvanced.add(UiOptionItem.from(
+                    "Set custom OpenAI model id" + (currentCustom != null && !currentCustom.isEmpty() ? " (" + currentCustom + ")" : ""),
+                    opt -> showOpenAICustomModelDialog(context, currentCustom),
+                    false));
+            if (currentCustom != null && !currentCustom.isEmpty()) {
+                oAdvanced.add(UiOptionItem.from("Clear custom model id", opt -> data.setOpenAICustomModel(null), false));
+            }
+            dlg.appendStringsCategory("Advanced", oAdvanced);
+        } else {
+            List<OptionItem> gModels = new ArrayList<>();
+            String currentModel = data.getModel();
+            gModels.add(UiOptionItem.from("Auto (2.0-flash-exp → 2.5-flash)",
+                    opt -> data.setModel("auto"),
+                    "auto".equals(currentModel)));
+            gModels.add(UiOptionItem.from("Gemini 2.0 Flash Experimental",
+                    opt -> data.setModel("gemini-2.0-flash-exp"),
+                    "gemini-2.0-flash-exp".equals(currentModel)));
+            gModels.add(UiOptionItem.from("Gemini 2.5 Flash",
+                    opt -> data.setModel("gemini-2.5-flash"),
+                    "gemini-2.5-flash".equals(currentModel)));
+            gModels.add(UiOptionItem.from("Gemini 1.5 Flash",
+                    opt -> data.setModel("gemini-1.5-flash"),
+                    "gemini-1.5-flash".equals(currentModel)));
+            gModels.add(UiOptionItem.from("Gemini 1.5 Pro",
+                    opt -> data.setModel("gemini-1.5-pro"),
+                    "gemini-1.5-pro".equals(currentModel)));
+            gModels.add(UiOptionItem.from("Gemini 1.0 Pro",
+                    opt -> data.setModel("gemini-1.0-pro"),
+                    "gemini-1.0-pro".equals(currentModel)));
+            dlg.appendRadioCategory("AI Model", gModels);
+        }
 
         // Transcript content size / tokens
         List<OptionItem> sizes = new ArrayList<>();
@@ -133,6 +161,24 @@ public class GeminiSettingsPresenter {
         dlg.appendStringsCategory("Email", email);
 
         dlg.showDialog(context.getString(R.string.gemini_settings_title), null);
+    }
+
+    private void showOpenAICustomModelDialog(Context ctx, String current) {
+        android.view.LayoutInflater inflater = android.view.LayoutInflater.from(ctx);
+        android.view.View view = inflater.inflate(com.liskovsoft.smartyoutubetv2.common.R.layout.simple_edit_dialog, null);
+        android.widget.EditText edit = view.findViewById(com.liskovsoft.smartyoutubetv2.common.R.id.simple_edit_value);
+        edit.setHint("e.g., gpt-4o or gpt-4o-mini");
+        if (current != null) edit.setText(current);
+
+        new android.app.AlertDialog.Builder(ctx)
+                .setTitle("Custom OpenAI model id")
+                .setView(view)
+                .setPositiveButton("Save", (d, w) -> {
+                    String value = edit.getText() != null ? edit.getText().toString().trim() : null;
+                    com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(ctx).setOpenAICustomModel((value != null && !value.isEmpty()) ? value : null);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void showEmailInputDialog(Context ctx, String current) {

@@ -11,6 +11,9 @@ public class GeminiData {
     private static final String KEY_MAX_CHARS = "gemini_max_chars";
     private static final String KEY_MODE = "gemini_mode"; // "url" or "transcript"
     private static final String KEY_MODEL = "gemini_model"; // model selection
+    private static final String KEY_PROVIDER = "ai_provider"; // "gemini" or "openai"
+    private static final String KEY_OPENAI_MODEL = "openai_model"; // openai model selection
+    private static final String KEY_OPENAI_MODEL_CUSTOM = "openai_model_custom"; // custom model id
     private static final String KEY_FACT_CHECK = "gemini_fact_check"; // fact check enabled
     private static final String KEY_MARK_WATCHED = "gemini_mark_watched"; // mark as watched on summary
     private static final String KEY_SUMMARY_EMAIL = "gemini_summary_email"; // recipient email for summaries
@@ -92,6 +95,32 @@ public class GeminiData {
 
     public void setModel(String model) {
         mPrefs.putString(KEY_MODEL, model);
+    }
+
+    // AI Provider selection
+    public String getProvider() {
+        return mPrefs.getString(KEY_PROVIDER, "openai"); // default OpenAI as requested
+    }
+
+    public void setProvider(String provider) {
+        mPrefs.putString(KEY_PROVIDER, provider);
+    }
+
+    // OpenAI model selection
+    public String getOpenAIModel() {
+        return mPrefs.getString(KEY_OPENAI_MODEL, "gpt5-mini");
+    }
+
+    public void setOpenAIModel(String model) {
+        mPrefs.putString(KEY_OPENAI_MODEL, model);
+    }
+
+    public String getOpenAICustomModel() {
+        return mPrefs.getString(KEY_OPENAI_MODEL_CUSTOM, null);
+    }
+
+    public void setOpenAICustomModel(String model) {
+        mPrefs.putString(KEY_OPENAI_MODEL_CUSTOM, model);
     }
 
     public boolean isFactCheckEnabled() {

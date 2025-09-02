@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 /**
  * Minimal Gemini client using REST API. Reads API key from assets/gemini.properties (API_KEY=...).
  */
-public class GeminiClient {
+public class GeminiClient implements AIClient {
     private String lastFactCheckError;
     
     private static class TranscriptResult {
@@ -958,6 +958,26 @@ public class GeminiClient {
         }
         lastFactCheckError = "no text candidates returned";
         return null;
+    }
+
+    // Reusable transcript helpers for other AI clients
+    public static String fetchTranscriptForSummary(android.content.Context ctx, String videoId) {
+        try {
+            GeminiClient g = new GeminiClient(ctx);
+            TranscriptResult tr = g.fetchTranscriptWithSource(videoId);
+            return tr != null ? tr.transcript : null;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    public static boolean hasOfficialCC(android.content.Context ctx, String videoId) {
+        try {
+            GeminiClient g = new GeminiClient(ctx);
+            return g.hasOfficialTrack(videoId);
+        } catch (Throwable t) {
+            return false;
+        }
     }
     
     /**

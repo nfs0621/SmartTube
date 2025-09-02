@@ -938,7 +938,7 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
         if (mainUIData.isMenuItemEnabled(MainUIData.MENU_ITEM_GEMINI_SUMMARY)) {
             // Only the default option (uses settings)
             mDialogPresenter.appendSingleButton(
-                    UiOptionItem.from("Gemini Summary", optionItem -> {
+                    UiOptionItem.from("AI Summary", optionItem -> {
                         mDialogPresenter.closeDialog();
                         showGeminiSummary(); // Uses settings
                     })
@@ -980,21 +980,30 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
             // Auto-mark videos watched - no button needed
             summaryOverlay.setOnConfirmListener(null);
 
-            // Run Gemini API call in background thread
+            // Run AI API call in background thread
             new Thread(() -> {
                 try {
-                    // Use the same GeminiClient as in VideoGridFragment
-                    com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient gemini = 
-                        new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
+                    com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
+                    String provider = gd.getProvider();
+                    com.liskovsoft.smartyoutubetv2.common.misc.AIClient ai;
+                    if ("openai".equalsIgnoreCase(provider)) {
+                        ai = new com.liskovsoft.smartyoutubetv2.common.misc.OpenAIClient(getContext());
+                        if (!ai.isConfigured()) {
+                            // Fallback to Gemini if OpenAI key not set
+                            ai = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
+                        }
+                    } else {
+                        ai = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
+                    }
                     
                     String summary;
-                    String title = "Gemini Summary";
+                    String title = "AI Summary";
                     
-                    if (gemini.isConfigured()) {
+                    if (ai.isConfigured()) {
                         int startSec = Math.max(0, video.startTimeSeconds);
-                        summary = gemini.summarize(video.title, video.author, video.videoId, detailLevel, startSec, mode);
+                        summary = ai.summarize(video.title, video.author, video.videoId, detailLevel, startSec, mode);
                         // Keep title simple - details moved to bottom of summary
-                        title = "Gemini Summary";
+                        title = "AI Summary";
                         
                         // Auto-mark video as watched when summary is generated successfully
                         try {
@@ -1020,7 +1029,7 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                             android.util.Log.e("VideoMenuPresenter", "Error auto-marking video as watched: " + e.getMessage());
                         }
                     } else {
-                        summary = "Gemini API key not configured.\n\nAdd it to assets/gemini.properties (API_KEY=...).";
+                        summary = "AI provider not configured. Add API key to assets (openai.properties or gemini.properties).";
                     }
                     
                     final String finalSummary = summary;
@@ -1033,7 +1042,7 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                         summaryOverlay.showText("🧠 " + finalTitle, styled);
                         
                         // Set up async fact checking and email functionality
-                        setupSummaryOverlayActions(summaryOverlay, finalSummary, video, gemini, activity);
+                        setupSummaryOverlayActions(summaryOverlay, finalSummary, video, new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext()), activity);
                     });
                 } catch (Exception e) {
                     String errorMsg = "Failed to get summary:\n" + e.getMessage();
@@ -1180,7 +1189,14 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
 
                     if (texts.isEmpty()) return;
                     android.util.Log.d("VideoMenuPresenter", "Comments collected for summary: " + texts.size());
-                    String csum = gemini.summarizeComments(video.title, video.author, video.videoId, texts, Math.min(texts.size(), gd.getCommentsMaxCount()));
+                    com.liskovsoft.smartyoutubetv2.common.misc.AIClient aiComments;
+                    if ("openai".equalsIgnoreCase(gd.getProvider())) {
+                        aiComments = new com.liskovsoft.smartyoutubetv2.common.misc.OpenAIClient(getContext());
+                        if (!aiComments.isConfigured()) aiComments = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
+                    } else {
+                        aiComments = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
+                    }
+                    String csum = aiComments.summarizeComments(video.title, video.author, video.videoId, texts, Math.min(texts.size(), gd.getCommentsMaxCount()));
                     if (csum == null || csum.isEmpty()) return;
                     commentsRef.set(csum);
 
@@ -1193,7 +1209,7 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                         if (factRef.get() != null) content.append("\n\n").append("🔍 ").append(factRef.get());
                         String formatted = beautifySummaryText(content.toString());
                         CharSequence styled = styleSummary(formatted);
-                        summaryOverlay.showText("🧠 Gemini Summary", styled);
+                        summaryOverlay.showText("🧠 AI Summary", styled);
                     });
                 } catch (Throwable t) {
                     android.util.Log.w("VideoMenuPresenter", "Comments summary failed: " + t.getMessage());
@@ -1212,7 +1228,14 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                     Thread.sleep(3000); // 3 second delay
                     android.util.Log.d("VideoMenuPresenter", "Starting async fact check after delay...");
                     
-                    String factCheckResult = gemini.factCheck(summary, video.title, video.author, video.videoId);
+                    String factCheckResult;
+                    if ("openai".equalsIgnoreCase(gd.getProvider())) {
+                        com.liskovsoft.smartyoutubetv2.common.misc.OpenAIClient oai = new com.liskovsoft.smartyoutubetv2.common.misc.OpenAIClient(getContext());
+                        if (oai.isConfigured()) factCheckResult = oai.factCheck(summary, video.title, video.author, video.videoId);
+                        else factCheckResult = gemini.factCheck(summary, video.title, video.author, video.videoId);
+                    } else {
+                        factCheckResult = gemini.factCheck(summary, video.title, video.author, video.videoId);
+                    }
                     
                     android.util.Log.d("VideoMenuPresenter", "Fact check result: " + (factCheckResult != null ? "SUCCESS (" + factCheckResult.length() + " chars)" : "NULL"));
                     
@@ -1226,7 +1249,7 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                             content.append("\n\n").append("🔍 ").append(factRef.get());
                             String formatted = beautifySummaryText(content.toString());
                             CharSequence styled = styleSummary(formatted);
-                            summaryOverlay.showText("🧠 Gemini Summary", styled);
+                            summaryOverlay.showText("🧠 AI Summary", styled);
                             android.util.Log.d("VideoMenuPresenter", "Fact check completed and overlay updated");
                         });
                     } else {

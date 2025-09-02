@@ -88,3 +88,9 @@ ci_run_logs*.zip
 paste.txt
 replay_pid*.log
 nul
+
+# API Keys and secrets (never commit these)
+openai.properties
+gemini.properties
+common.properties
+*.properties

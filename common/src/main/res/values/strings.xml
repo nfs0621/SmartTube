@@ -109,7 +109,7 @@
     <string name="you_wont_see_this_video">Video has been removed from recommended</string>
     <string name="you_wont_see_this_channel">You won\'t see this channel in recommendations</string>
     <string name="settings_search">Search</string>
-    <string name="gemini_settings_title">AI Summaries (Gemini)</string>
+    <string name="gemini_settings_title">AI Summaries</string>
     <string name="gemini_category_title">Summaries</string>
     <string name="gemini_enable_summaries">Enable video summaries on focus</string>
     <string name="gemini_delay_title">Summary delay</string>
@@ -712,12 +712,16 @@
     <string name="card_preview">Card preview</string>
     <string name="card_unlocalized_titles">Unlocalized video titles</string>
     <string name="dont_resize_video_to_fit_dialog">Don\'t resize video to fit dialog</string>
-    <string name="menu_item_gemini_summary">Gemini Summary</string>
+    <string name="menu_item_gemini_summary">AI Summary</string>
     <string name="gemini_detail_level_title">Summary Detail Level</string>
     <string name="gemini_detail_level_concise">Concise</string>
     <string name="gemini_detail_level_moderate">Moderate</string>
     <string name="gemini_detail_level_detailed">Detailed</string>
     <string name="gemini_source_mode_title">Summary Source</string>
-    <string name="gemini_source_mode_url">Ask Gemini to watch video (URL)</string>
+    <string name="gemini_source_mode_url">Ask AI to watch video (URL)</string>
     <string name="gemini_source_mode_transcript">Use Transcript/Closed Captions</string>
+    <string name="gemini_comments_summarize_toggle">Summarize comments in overlay</string>
+    <string name="gemini_comments_max_title">Max comments to analyze</string>
+    <string name="gemini_comments_source_title">Comments source</string>
+    <string name="gemini_comments_source_top">Top comments</string>
 </resources>

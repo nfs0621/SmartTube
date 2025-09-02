@@ -35,10 +35,13 @@ Always use stable builds for production and increment version numbers in `smartt
   - Install stable debug directly: `./gradlew :smarttubetv:installStstableDebug`
   - Build stable release (requires signing): `./gradlew :smarttubetv:assembleStstableRelease`
   - Clean + build: `./gradlew clean :smarttubetv:assembleStstableDebug`
+  - Lint check: `./gradlew lint`
+  - Check dependencies: `./gradlew :smarttubetv:dependencies`
 - Windows:
   - `gradlew.bat :smarttubetv:assembleStstableDebug -x lint`
   - `gradlew.bat :smarttubetv:installStstableDebug`
   - `gradlew.bat :smarttubetv:assembleStstableRelease`
+  - `gradlew.bat lint`
 
 ### Build Variants & Application IDs
 - ststable: `com.teamsmart.videomanager.tv` (primary stable version)
@@ -180,13 +183,19 @@ Variants have separate resource folders:
 
 ## Development Workflow
 
-### Testing
+### Testing & Debugging
 ```bash
 # Monitor Gemini logs
 adb logcat -s GeminiClient:D -s VideoGridFragment:D | grep -i gemini
 
 # Check app state
 adb logcat | grep -i "smarttube\|gemini\|summary"
+
+# Run unit tests (ExoPlayer components)
+./gradlew test
+
+# Test specific module
+./gradlew :common:test
 ```
 
 ### Common Issues
@@ -216,11 +225,19 @@ Then wire these into `signingConfigs` in `smarttubetv/build.gradle` and run:
 - Use existing utilities and libraries from the codebase
 - Maintain consistency with current architecture
 
+## Git Submodules
+
+This project uses git submodules for shared components:
+- `MediaServiceCore/`: YouTube API integration
+- `SharedModules/`: Common utilities and libraries
+- `exoplayer-amzn-2.10.6/`: Amazon ExoPlayer fork
+
+After cloning: `git submodule update --init --recursive`
+
 ## Important Notes
 
 - Security: Never include API keys, secrets, or sensitive data in commits.
 - Compatibility: Android TV devices only — no phone/tablet/webOS/Tizen/iOS support.
 - Build Requirements: Prefer JDK 11 for Gradle daemon.
-- Git Submodules: Run `git submodule update --init --recursive` after cloning.
 - Version Control: Always increment version numbers for new builds.
 - APK Distribution: Only distribute through official channels, never app stores.

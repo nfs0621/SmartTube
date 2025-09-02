@@ -936,37 +936,11 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
         MainUIData mainUIData = MainUIData.instance(getContext());
         
         if (mainUIData.isMenuItemEnabled(MainUIData.MENU_ITEM_GEMINI_SUMMARY)) {
-            // Top option: Default (uses settings)
+            // Only the default option (uses settings)
             mDialogPresenter.appendSingleButton(
-                    UiOptionItem.from("Gemini Summary - Default", optionItem -> {
+                    UiOptionItem.from("AI Summary", optionItem -> {
                         mDialogPresenter.closeDialog();
                         showGeminiSummary(); // Uses settings
-                    })
-            );
-            
-            // Reverse order: Detailed first, then Concise
-            mDialogPresenter.appendSingleButton(
-                    UiOptionItem.from("Gemini Summary - Transcript - Detailed", optionItem -> {
-                        mDialogPresenter.closeDialog();
-                        showGeminiSummary("transcript", "detailed");
-                    })
-            );
-            mDialogPresenter.appendSingleButton(
-                    UiOptionItem.from("Gemini Summary - Transcript - Concise", optionItem -> {
-                        mDialogPresenter.closeDialog();
-                        showGeminiSummary("transcript", "concise");
-                    })
-            );
-            mDialogPresenter.appendSingleButton(
-                    UiOptionItem.from("Gemini Summary - URL - Detailed", optionItem -> {
-                        mDialogPresenter.closeDialog();
-                        showGeminiSummary("url", "detailed");
-                    })
-            );
-            mDialogPresenter.appendSingleButton(
-                    UiOptionItem.from("Gemini Summary - URL - Concise", optionItem -> {
-                        mDialogPresenter.closeDialog();
-                        showGeminiSummary("url", "concise");
                     })
             );
         }
@@ -1006,21 +980,30 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
             // Auto-mark videos watched - no button needed
             summaryOverlay.setOnConfirmListener(null);
 
-            // Run Gemini API call in background thread
+            // Run AI API call in background thread
             new Thread(() -> {
                 try {
-                    // Use the same GeminiClient as in VideoGridFragment
-                    com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient gemini = 
-                        new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
+                    com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
+                    String provider = gd.getProvider();
+                    com.liskovsoft.smartyoutubetv2.common.misc.AIClient ai;
+                    if ("openai".equalsIgnoreCase(provider)) {
+                        ai = new com.liskovsoft.smartyoutubetv2.common.misc.OpenAIClient(getContext());
+                        if (!ai.isConfigured()) {
+                            // Fallback to Gemini if OpenAI key not set
+                            ai = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
+                        }
+                    } else {
+                        ai = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
+                    }
                     
                     String summary;
-                    String title = "Gemini Summary";
+                    String title = "AI Summary";
                     
-                    if (gemini.isConfigured()) {
+                    if (ai.isConfigured()) {
                         int startSec = Math.max(0, video.startTimeSeconds);
-                        summary = gemini.summarize(video.title, video.author, video.videoId, detailLevel, startSec, mode);
-                        // Update title to include mode and model used
-                        title = "Gemini Summary [" + mode.toUpperCase() + " - " + detailLevel.toUpperCase() + " - " + gemini.getLastUsedModel() + "]";
+                        summary = ai.summarize(video.title, video.author, video.videoId, detailLevel, startSec, mode);
+                        // Keep title simple - details moved to bottom of summary
+                        title = "AI Summary";
                         
                         // Auto-mark video as watched when summary is generated successfully
                         try {
@@ -1046,7 +1029,7 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                             android.util.Log.e("VideoMenuPresenter", "Error auto-marking video as watched: " + e.getMessage());
                         }
                     } else {
-                        summary = "Gemini API key not configured.\n\nAdd it to assets/gemini.properties (API_KEY=...).";
+                        summary = "AI provider not configured. Add API key to assets (openai.properties or gemini.properties).";
                     }
                     
                     final String finalSummary = summary;
@@ -1054,7 +1037,12 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                     
                     // Show the summary on the UI thread using the proper overlay
                     activity.runOnUiThread(() -> {
-                        summaryOverlay.showText(finalTitle, finalSummary);
+                        String formatted = beautifySummaryText(finalSummary);
+                        CharSequence styled = styleSummary(formatted);
+                        summaryOverlay.showText("🧠 " + finalTitle, styled);
+                        
+                        // Set up async fact checking and email functionality
+                        setupSummaryOverlayActions(summaryOverlay, finalSummary, video, new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext()), activity);
                     });
                 } catch (Exception e) {
                     String errorMsg = "Failed to get summary:\n" + e.getMessage();
@@ -1063,6 +1051,216 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                     });
                 }
             }).start();
+        }
+    }
+
+    // Simple beautifier to enhance readability: convert ASCII bullets to dot bullets,
+    // add a bit of spacing around section dividers, and normalize line breaks.
+    private static String beautifySummaryText(String text) {
+        if (text == null) return null;
+        try {
+            String out = text;
+            // Convert leading hyphen bullets to •
+            out = out.replaceAll("(?m)^-\\s+", "• ");
+            // Normalize three dashes divider to a nicer break
+            out = out.replaceAll("(?m)^---$", "\n────────────────\n");
+            // Ensure separators before well-known sections
+            out = out.replaceFirst("(?m)^[💬] Comments Summary", "────────────────\n💬 Comments Summary");
+            out = out.replaceFirst("(?m)^\\*\\*Fact Check Results:\\*\\*", "────────────────\n**Fact Check Results:**");
+            // Compact excessive blank lines
+            out = out.replaceAll("\n{3,}", "\n\n");
+            return out.trim();
+        } catch (Throwable t) {
+            return text;
+        }
+    }
+
+    // Style headings with accent color and bold; keep body readable.
+    private static CharSequence styleSummary(String text) {
+        if (text == null) return null;
+        android.text.SpannableStringBuilder ssb = new android.text.SpannableStringBuilder(text);
+        int len = ssb.length();
+        int start = 0;
+        int accent = android.graphics.Color.parseColor("#86C5FF");
+        while (start < len) {
+            int lineEnd = android.text.TextUtils.indexOf(ssb, '\n', start);
+            if (lineEnd < 0) lineEnd = len;
+            // Detect headings
+            CharSequence line = ssb.subSequence(start, lineEnd);
+            String s = line.toString();
+            boolean isHeading = s.startsWith("🧠") || s.startsWith("💬") || s.startsWith("🔍") || s.startsWith("Comments Summary") || s.startsWith("**Fact Check Results:**");
+            if (isHeading) {
+                ssb.setSpan(new android.text.style.ForegroundColorSpan(accent), start, lineEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), start, lineEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                ssb.setSpan(new android.text.style.RelativeSizeSpan(1.06f), start, lineEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            start = lineEnd + 1;
+        }
+        return ssb;
+    }
+
+    /**
+     * Set up email and fact check functionality for the summary overlay.
+     * This implements the new async two-stage process: summary first, then fact check on demand.
+     */
+    private void setupSummaryOverlayActions(com.liskovsoft.smartyoutubetv2.common.ui.summary.VideoSummaryOverlay summaryOverlay, 
+                                          String summary, 
+                                          com.liskovsoft.smartyoutubetv2.common.app.models.data.Video video,
+                                          com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient gemini,
+                                          android.app.Activity activity) {
+        com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = 
+            com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(getContext());
+        
+        // Content segments accumulator to preserve ordering: Main → Comments → Fact check
+        final java.util.concurrent.atomic.AtomicReference<String> commentsRef = new java.util.concurrent.atomic.AtomicReference<>(null);
+        final java.util.concurrent.atomic.AtomicReference<String> factRef = new java.util.concurrent.atomic.AtomicReference<>(null);
+
+        // Set up email functionality (if enabled)
+        if (gd.isEmailSummariesEnabled()) {
+            summaryOverlay.setOnEmailListener(() -> {
+                try {
+                    String to = gd.getSummaryEmail();
+                    if (to == null || to.isEmpty()) {
+                        android.widget.Toast.makeText(getContext(), "Set summary email in Settings", android.widget.Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    String subject = "SmartTube Summary: " + (video.title != null ? video.title : "Video");
+                    String link = video.videoId != null ? ("https://www.youtube.com/watch?v=" + video.videoId) : "";
+                    StringBuilder body = new StringBuilder();
+                    body.append("Title: ").append(video.title).append("\n");
+                    body.append("Channel: ").append(video.author).append("\n");
+                    if (!link.isEmpty()) body.append("Link: ").append(link).append("\n");
+                    body.append("\nSummary:\n").append(summary);
+
+                    android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_SENDTO);
+                    intent.setData(android.net.Uri.parse("mailto:"));
+                    intent.putExtra(android.content.Intent.EXTRA_EMAIL, new String[]{to});
+                    intent.putExtra(android.content.Intent.EXTRA_SUBJECT, subject);
+                    intent.putExtra(android.content.Intent.EXTRA_TEXT, body.toString());
+                    try {
+                        activity.startActivity(intent);
+                    } catch (Throwable e) {
+                        android.widget.Toast.makeText(getContext(), "No email app found", android.widget.Toast.LENGTH_LONG).show();
+                    }
+                } catch (Throwable e) {
+                    android.util.Log.e("VideoMenuPresenter", "Email summary error: " + e.getMessage());
+                }
+            });
+        } else {
+            // Hide email button when disabled
+            summaryOverlay.setOnEmailListener(null);
+        }
+
+        // Summarize comments (async) if enabled
+        if (gd.isCommentsSummaryEnabled()) {
+            new Thread(() -> {
+                try {
+                    // Fetch comments key from metadata (blocking)
+                    com.liskovsoft.mediaserviceinterfaces.data.MediaItemMetadata md = mMediaItemService.getMetadata(video.videoId);
+                    String commentsKey = md != null ? md.getCommentsKey() : null;
+                    if (commentsKey == null) return; // no comments
+
+                    java.util.List<String> texts = new java.util.ArrayList<>();
+                    java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+                    io.reactivex.disposables.Disposable[] holder = new io.reactivex.disposables.Disposable[1];
+                    holder[0] = getCommentsService().getCommentsObserve(commentsKey)
+                            .subscribe(group -> {
+                                try {
+                                    if (group != null && group.getComments() != null) {
+                                        int max = gd.getCommentsMaxCount();
+                                        int count = 0;
+                                        for (com.liskovsoft.mediaserviceinterfaces.data.CommentItem item : group.getComments()) {
+                                            if (item == null || item.getMessage() == null) continue;
+                                            texts.add(item.getMessage());
+                                            count++;
+                                            if (count >= max) break;
+                                        }
+                                    }
+                                } finally {
+                                    if (holder[0] != null) holder[0].dispose();
+                                    latch.countDown();
+                                }
+                            }, err -> {
+                                if (holder[0] != null) holder[0].dispose();
+                                latch.countDown();
+                            });
+                    // Wait for first page (fetch can be slow on some videos/networks)
+                    latch.await(20, java.util.concurrent.TimeUnit.SECONDS);
+
+                    if (texts.isEmpty()) return;
+                    android.util.Log.d("VideoMenuPresenter", "Comments collected for summary: " + texts.size());
+                    com.liskovsoft.smartyoutubetv2.common.misc.AIClient aiComments;
+                    if ("openai".equalsIgnoreCase(gd.getProvider())) {
+                        aiComments = new com.liskovsoft.smartyoutubetv2.common.misc.OpenAIClient(getContext());
+                        if (!aiComments.isConfigured()) aiComments = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
+                    } else {
+                        aiComments = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
+                    }
+                    String csum = aiComments.summarizeComments(video.title, video.author, video.videoId, texts, Math.min(texts.size(), gd.getCommentsMaxCount()));
+                    if (csum == null || csum.isEmpty()) return;
+                    commentsRef.set(csum);
+
+                    activity.runOnUiThread(() -> {
+                        StringBuilder content = new StringBuilder();
+                        content.append(summary);
+                        if (commentsRef.get() != null) {
+                            content.append("\n\n").append("💬 Comments Summary\n").append(commentsRef.get());
+                        }
+                        if (factRef.get() != null) content.append("\n\n").append("🔍 ").append(factRef.get());
+                        String formatted = beautifySummaryText(content.toString());
+                        CharSequence styled = styleSummary(formatted);
+                        summaryOverlay.showText("🧠 AI Summary", styled);
+                    });
+                } catch (Throwable t) {
+                    android.util.Log.w("VideoMenuPresenter", "Comments summary failed: " + t.getMessage());
+                }
+            }).start();
+        }
+
+        // Set up fact check functionality (async, on-demand)
+        android.util.Log.d("VideoMenuPresenter", "Checking fact check setting: " + gd.isFactCheckEnabled());
+        if (gd.isFactCheckEnabled()) {
+            android.util.Log.d("VideoMenuPresenter", "✓ Fact checking ENABLED - starting async fact check for: " + video.title);
+            
+            // For now, auto-trigger fact check after a 3-second delay (temporary)
+            new Thread(() -> {
+                try {
+                    Thread.sleep(3000); // 3 second delay
+                    android.util.Log.d("VideoMenuPresenter", "Starting async fact check after delay...");
+                    
+                    String factCheckResult;
+                    if ("openai".equalsIgnoreCase(gd.getProvider())) {
+                        com.liskovsoft.smartyoutubetv2.common.misc.OpenAIClient oai = new com.liskovsoft.smartyoutubetv2.common.misc.OpenAIClient(getContext());
+                        if (oai.isConfigured()) factCheckResult = oai.factCheck(summary, video.title, video.author, video.videoId);
+                        else factCheckResult = gemini.factCheck(summary, video.title, video.author, video.videoId);
+                    } else {
+                        factCheckResult = gemini.factCheck(summary, video.title, video.author, video.videoId);
+                    }
+                    
+                    android.util.Log.d("VideoMenuPresenter", "Fact check result: " + (factCheckResult != null ? "SUCCESS (" + factCheckResult.length() + " chars)" : "NULL"));
+                    
+                    if (factCheckResult != null && !factCheckResult.isEmpty()) {
+                        // Update overlay with fact check results
+                        activity.runOnUiThread(() -> {
+                            factRef.set(factCheckResult);
+                            StringBuilder content = new StringBuilder();
+                            content.append(summary);
+                            if (commentsRef.get() != null) content.append("\n\n").append("💬 Comments Summary\n").append(commentsRef.get());
+                            content.append("\n\n").append("🔍 ").append(factRef.get());
+                            String formatted = beautifySummaryText(content.toString());
+                            CharSequence styled = styleSummary(formatted);
+                            summaryOverlay.showText("🧠 AI Summary", styled);
+                            android.util.Log.d("VideoMenuPresenter", "Fact check completed and overlay updated");
+                        });
+                    } else {
+                        android.util.Log.w("VideoMenuPresenter", "Fact check returned empty or null result");
+                    }
+                } catch (Exception e) {
+                    android.util.Log.e("VideoMenuPresenter", "Async fact check failed: " + e.getMessage(), e);
+                }
+            }).start();
+        } else {
+            android.util.Log.w("VideoMenuPresenter", "✗ Fact checking DISABLED in settings - not starting fact check");
         }
     }
 }

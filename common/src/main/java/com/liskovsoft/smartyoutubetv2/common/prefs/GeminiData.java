@@ -4,16 +4,25 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 
 public class GeminiData {
-    private static final String KEY_ENABLED = "gemini_enabled";
-    private static final String KEY_DELAY_MS = "gemini_delay_ms";
+    // Removed: auto-summary enable and delay keys
     private static final String KEY_DETAIL_LEVEL = "gemini_detail_level";
     private static final String KEY_LANG = "gemini_lang";
     private static final String KEY_DEBUG = "gemini_debug";
     private static final String KEY_MAX_CHARS = "gemini_max_chars";
     private static final String KEY_MODE = "gemini_mode"; // "url" or "transcript"
     private static final String KEY_MODEL = "gemini_model"; // model selection
+    private static final String KEY_PROVIDER = "ai_provider"; // "gemini" or "openai"
+    private static final String KEY_OPENAI_MODEL = "openai_model"; // openai model selection
+    private static final String KEY_OPENAI_MODEL_CUSTOM = "openai_model_custom"; // custom model id
     private static final String KEY_FACT_CHECK = "gemini_fact_check"; // fact check enabled
     private static final String KEY_MARK_WATCHED = "gemini_mark_watched"; // mark as watched on summary
+    private static final String KEY_SUMMARY_EMAIL = "gemini_summary_email"; // recipient email for summaries
+    private static final String KEY_EMAIL_SUMMARIES_ENABLED = "gemini_email_summaries_enabled"; // email summaries feature enabled
+    private static final String KEY_COMPACT_LAYOUT = "gemini_compact_layout"; // compact UI layout for overlays
+    // Comments summary
+    private static final String KEY_COMMENTS_SUMMARY_ENABLED = "gemini_comments_summary_enabled";
+    private static final String KEY_COMMENTS_MAX = "gemini_comments_max";
+    private static final String KEY_COMMENTS_SOURCE = "gemini_comments_source"; // "top" (default), reserved for future
     @SuppressLint("StaticFieldLeak")
     private static GeminiData sInstance;
     private final AppPrefs mPrefs;
@@ -27,21 +36,7 @@ public class GeminiData {
         return sInstance;
     }
 
-    public boolean isEnabled() {
-        return mPrefs.getBoolean(KEY_ENABLED, true);
-    }
-
-    public void setEnabled(boolean enabled) {
-        mPrefs.putBoolean(KEY_ENABLED, enabled);
-    }
-
-    public int getDelayMs() {
-        return mPrefs.getInt(KEY_DELAY_MS, 5000);
-    }
-
-    public void setDelayMs(int ms) {
-        mPrefs.putInt(KEY_DELAY_MS, ms);
-    }
+    // Auto-summary enable and delay removed
 
     public String getDetailLevel() {
         return mPrefs.getString(KEY_DETAIL_LEVEL, "moderate");
@@ -94,11 +89,38 @@ public class GeminiData {
      * Options: "auto", "gemini-2.0-flash-exp", "gemini-2.5-flash", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"
      */
     public String getModel() {
-        return mPrefs.getString(KEY_MODEL, "auto");
+        // Default to a tools-capable model for better compatibility (fact-check, etc.)
+        return mPrefs.getString(KEY_MODEL, "gemini-2.5-flash");
     }
 
     public void setModel(String model) {
         mPrefs.putString(KEY_MODEL, model);
+    }
+
+    // AI Provider selection
+    public String getProvider() {
+        return mPrefs.getString(KEY_PROVIDER, "openai"); // default OpenAI as requested
+    }
+
+    public void setProvider(String provider) {
+        mPrefs.putString(KEY_PROVIDER, provider);
+    }
+
+    // OpenAI model selection
+    public String getOpenAIModel() {
+        return mPrefs.getString(KEY_OPENAI_MODEL, "gpt5-mini");
+    }
+
+    public void setOpenAIModel(String model) {
+        mPrefs.putString(KEY_OPENAI_MODEL, model);
+    }
+
+    public String getOpenAICustomModel() {
+        return mPrefs.getString(KEY_OPENAI_MODEL_CUSTOM, null);
+    }
+
+    public void setOpenAICustomModel(String model) {
+        mPrefs.putString(KEY_OPENAI_MODEL_CUSTOM, model);
     }
 
     public boolean isFactCheckEnabled() {
@@ -115,6 +137,57 @@ public class GeminiData {
 
     public void setMarkAsWatchedEnabled(boolean enabled) {
         mPrefs.putBoolean(KEY_MARK_WATCHED, enabled);
+    }
+
+    public String getSummaryEmail() {
+        return mPrefs.getString(KEY_SUMMARY_EMAIL, null);
+    }
+
+    public void setSummaryEmail(String email) {
+        mPrefs.putString(KEY_SUMMARY_EMAIL, email);
+    }
+
+    public boolean isEmailSummariesEnabled() {
+        return mPrefs.getBoolean(KEY_EMAIL_SUMMARIES_ENABLED, false); // Default: off
+    }
+
+    public void setEmailSummariesEnabled(boolean enabled) {
+        mPrefs.putBoolean(KEY_EMAIL_SUMMARIES_ENABLED, enabled);
+    }
+
+    // UI: Compact layout
+    public boolean isCompactLayout() {
+        return mPrefs.getBoolean(KEY_COMPACT_LAYOUT, false);
+    }
+
+    public void setCompactLayout(boolean compact) {
+        mPrefs.putBoolean(KEY_COMPACT_LAYOUT, compact);
+    }
+
+    // Comments summary prefs
+    public boolean isCommentsSummaryEnabled() {
+        return mPrefs.getBoolean(KEY_COMMENTS_SUMMARY_ENABLED, false);
+    }
+
+    public void setCommentsSummaryEnabled(boolean enabled) {
+        mPrefs.putBoolean(KEY_COMMENTS_SUMMARY_ENABLED, enabled);
+    }
+
+    public int getCommentsMaxCount() {
+        // Default to 50 as requested
+        return mPrefs.getInt(KEY_COMMENTS_MAX, 50);
+    }
+
+    public void setCommentsMaxCount(int count) {
+        mPrefs.putInt(KEY_COMMENTS_MAX, count);
+    }
+
+    public String getCommentsSource() {
+        return mPrefs.getString(KEY_COMMENTS_SOURCE, "top");
+    }
+
+    public void setCommentsSource(String source) {
+        mPrefs.putString(KEY_COMMENTS_SOURCE, source);
     }
 }
 

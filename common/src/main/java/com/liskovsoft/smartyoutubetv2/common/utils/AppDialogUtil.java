@@ -433,17 +433,33 @@ public class AppDialogUtil {
 
         List<OptionItem> options = new ArrayList<>();
 
-        for (int scalePercent : Helpers.range(0, 300, 5)) {
-            float scale = scalePercent / 100f;
-            options.add(UiOptionItem.from(String.format("%s%%", scalePercent),
+        // Special case: Mute (maps to -inf dB)
+        options.add(UiOptionItem.from("Mute",
+                optionItem -> {
+                    playerData.setPlayerVolume(0f);
+                    playerTweaksData.setPlayerAutoVolumeEnabled(false);
+                    onSetCallback.run();
+                },
+                Helpers.floatEquals(0f, playerData.getPlayerVolume())));
+
+        // Show volume in dB: from -30 dB up to +9 dB (approx 0.0316x .. 2.82x)
+        // 0 dB equals unity gain (1.0x)
+        for (int db = -30; db <= 9; db++) {
+            final int dbValue = db;
+            // Convert dB to linear scale. 10^(dB/20)
+            final float scale = (float) Math.pow(10.0, dbValue / 20.0);
+            // Label formatting: "-10 dB", "0 dB", "+6 dB"
+            final String label = (dbValue > 0 ? "+" + dbValue : String.valueOf(dbValue)) + " dB";
+
+            options.add(UiOptionItem.from(label,
                     optionItem -> {
                         playerData.setPlayerVolume(scale);
-                        playerTweaksData.setPlayerAutoVolumeEnabled(scalePercent == 100);
-
-                        if (scalePercent > 100) {
+                        // Preserve legacy behavior: enable auto-volume when unity gain selected.
+                        playerTweaksData.setPlayerAutoVolumeEnabled(dbValue == 0);
+                        // Warn user when boosting above 0 dB
+                        if (dbValue > 0) {
                             MessageHelpers.showLongMessage(context, R.string.volume_boost_warning);
                         }
-
                         onSetCallback.run();
                     },
                     Helpers.floatEquals(scale, playerData.getPlayerVolume())));

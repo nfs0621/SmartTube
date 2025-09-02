@@ -483,6 +483,13 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
 
         mDialogPresenter.appendSingleButton(
                 UiOptionItem.from(getContext().getString(R.string.mark_as_watched), optionItem -> {
+                    performMarkAsWatched(mVideo);
+                    mDialogPresenter.closeDialog();
+                })
+        );
+
+        mDialogPresenter.appendSingleButton(
+                UiOptionItem.from(getContext().getString(R.string.mark_as_watched), optionItem -> {
                     // Use video duration instead of 0 to mark as fully watched in history
                     long durationMs = mVideo.getDurationMs() > 0 ? mVideo.getDurationMs() : 1000;
                     MediaServiceManager.instance().updateHistory(mVideo, durationMs);
@@ -943,6 +950,12 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                         showGeminiSummary(); // Uses settings
                     })
             );
+            mDialogPresenter.appendSingleButton(
+                    UiOptionItem.from(getContext().getString(R.string.mark_as_watched), optionItem -> {
+                        performMarkAsWatched(getVideo());
+                        mDialogPresenter.closeDialog();
+                    })
+            );
         }
     }
 
@@ -1052,6 +1065,26 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                 }
             }).start();
         }
+    }
+
+    private void performMarkAsWatched(Video v) {
+        if (v == null || !v.hasVideo()) return;
+        long durationMs = v.getDurationMs() > 0 ? v.getDurationMs() : 1000;
+        try {
+            MediaServiceManager.instance().updateHistory(v, durationMs);
+            v.markFullyViewed();
+            VideoStateService.instance(getContext()).save(new State(v, durationMs));
+            VideoStateService.instance(getContext()).persistState();
+            Playlist.instance().sync(v);
+        } catch (Throwable e) {
+            Log.e(TAG, "performMarkAsWatched failed: %s", e.getMessage());
+        }
+        try {
+            BrowsePresenter bp = BrowsePresenter.instance(getContext());
+            if (bp != null && bp.inForeground() && (bp.isHomeSection() || bp.isSubscriptionsSection())) {
+                bp.refresh();
+            }
+        } catch (Throwable ignore) { }
     }
 
     // Simple beautifier to enhance readability: convert ASCII bullets to dot bullets,

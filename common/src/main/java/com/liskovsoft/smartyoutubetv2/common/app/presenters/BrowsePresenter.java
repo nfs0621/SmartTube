@@ -723,6 +723,23 @@ public class BrowsePresenter extends BasePresenter<BrowseView> implements Sectio
 
                                 VideoGroup videoGroup = VideoGroup.from(mediaGroup, section);
 
+                                // Locally hide fully watched items from Home recommendations
+                                if (isHomeSection()) {
+                                    VideoStateService stateService = VideoStateService.instance(getContext());
+                                    if (stateService != null) {
+                                        int size = videoGroup.getSize();
+                                        for (int i = size - 1; i >= 0; i--) {
+                                            Video v = videoGroup.get(i);
+                                            if (v == null) continue;
+                                            State s = stateService.getByVideoId(v.videoId);
+                                            float localPercent = s != null && s.durationMs > 0 ? (s.positionMs / (s.durationMs / 100f)) : v.percentWatched;
+                                            if (localPercent > 80f && !v.isLive) {
+                                                videoGroup.remove(v);
+                                            }
+                                        }
+                                    }
+                                }
+
                                 if (TextUtils.isEmpty(videoGroup.getTitle())) {
                                     videoGroup.setTitle(getContext().getString(R.string.suggestions));
                                 }

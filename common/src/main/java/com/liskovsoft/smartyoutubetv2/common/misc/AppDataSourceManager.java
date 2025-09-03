@@ -67,6 +67,9 @@ public class AppDataSourceManager {
         // Gemini summaries
         settingItems.add(new SettingsItem(
                 context.getString(R.string.gemini_settings_title), () -> com.liskovsoft.smartyoutubetv2.common.app.presenters.settings.GeminiSettingsPresenter.instance(context).show(), R.drawable.settings_about));
+        // API Keys pairing (LAN)
+        settingItems.add(new SettingsItem(
+                context.getString(R.string.api_keys_pairing_settings_title), () -> com.liskovsoft.smartyoutubetv2.common.app.presenters.settings.ApiKeysSettingsPresenter.instance(context).show(), R.drawable.settings_cast));
         settingItems.add(new SettingsItem(
                 context.getString(R.string.content_block_provider), () -> ContentBlockSettingsPresenter.instance(context).show(), R.drawable.settings_block));
         settingItems.add(new SettingsItem(

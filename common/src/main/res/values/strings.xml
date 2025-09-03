@@ -724,4 +724,6 @@
     <string name="gemini_comments_max_title">Max comments to analyze</string>
     <string name="gemini_comments_source_title">Comments source</string>
     <string name="gemini_comments_source_top">Top comments</string>
+    <string name="api_keys_pairing_settings_title">API Keys (pair from phone)</string>
 </resources>
+

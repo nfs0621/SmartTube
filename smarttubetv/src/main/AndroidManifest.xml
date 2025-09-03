@@ -292,6 +292,7 @@
             android:screenOrientation="unspecified"/>
 
         <!-- END Launchers -->
-    </application>
+        <activity android:name="com.liskovsoft.smartyoutubetv2.tv.ui.apikey.PairApiKeyActivity" android:launchMode="singleInstance" android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|layoutDirection" android:screenOrientation="unspecified" android:theme="@style/App.Theme.Leanback.GuidedStep" android:exported="false"/>
+</application>
 
 </manifest>

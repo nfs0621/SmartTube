@@ -118,4 +118,10 @@
     <string name="text_post_results_title">Posts for %s</string>
     <string name="text_no_results">No results</string>
     <string name="error_message_network_needed">Oops, you need a network connection to do that!</string>
+
+    <!-- API key pairing (local LAN) -->
+    <string translatable="false" name="api_key_pairing_title">Pair API Key</string>
+    <string translatable="false" name="api_key_pairing_desc">On your phone, open the shown URL and enter the PIN.</string>
+    <string translatable="false" name="api_key_saved_toast">API key saved</string>
+    <string translatable="false" name="dialog_close">Close</string>
 </resources>

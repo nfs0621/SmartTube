@@ -248,4 +248,9 @@ dependencies {
     //implementation 'com.github.stfalcon-studio:Chatkit:' + chatkitVersion
 
     implementation 'net.gotev:speech:' + gotevSpeechVersion
+
+    // Embedded LAN pairing server for API key input
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    // QR generation
+    implementation 'com.google.zxing:core:3.5.3'
 }

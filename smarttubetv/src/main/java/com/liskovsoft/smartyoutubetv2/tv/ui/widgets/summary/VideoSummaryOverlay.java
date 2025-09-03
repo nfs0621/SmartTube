@@ -24,6 +24,7 @@ public class VideoSummaryOverlay {
     private ScrollView scroll;
     private View previousFocus;
     private View emailBtn;
+    private boolean firstContentShown;
 
     public VideoSummaryOverlay(Activity activity) {
         this.activity = activity;
@@ -91,6 +92,15 @@ public class VideoSummaryOverlay {
         });
 
         content.addView(root);
+
+        // Keep focus on overlay while visible (avoid leaking focus to underlying views)
+        root.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus, newFocus) -> {
+            if (isVisible()) {
+                if (newFocus == null || false) {
+                    root.requestFocus();
+                }
+            }
+        });
     }
 
     private void scrollBy(int dy) {
@@ -99,6 +109,7 @@ public class VideoSummaryOverlay {
 
     public void showLoading(CharSequence workingText) {
         ensureInflated();
+        firstContentShown = false;
         previousFocus = activity.getCurrentFocus();
         root.setVisibility(View.VISIBLE);
         progress.setVisibility(View.VISIBLE);
@@ -111,9 +122,15 @@ public class VideoSummaryOverlay {
         ensureInflated();
         progress.setVisibility(View.GONE);
         status.setText(title);
+        int prevY = scroll != null ? scroll.getScrollY() : 0;
         text.setText(body);
         handler.post(() -> {
-            scroll.scrollTo(0, 0);
+            if (!firstContentShown) {
+                scroll.scrollTo(0, 0);
+                firstContentShown = true;
+            } else if (prevY > 0) {
+                scroll.scrollTo(0, prevY);
+            }
             root.requestFocus();
         });
     }
@@ -147,5 +164,7 @@ public class VideoSummaryOverlay {
         return text != null ? text.getText() : "";
     }
 }
+
+
 
 

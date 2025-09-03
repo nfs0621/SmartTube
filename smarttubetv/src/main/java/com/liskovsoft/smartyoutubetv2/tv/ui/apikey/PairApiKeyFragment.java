@@ -163,7 +163,7 @@ public class PairApiKeyFragment extends GuidedStepSupportFragment implements Pai
     public void onCreateActions(@NonNull List<GuidedAction> actions, Bundle savedInstanceState) {
         actions.add(new GuidedAction.Builder()
                 .id(ACTION_DONE)
-                .title(getString(R.string.dialog_close))
+                .title(getString(R.string.back))
                 .build());
     }
 

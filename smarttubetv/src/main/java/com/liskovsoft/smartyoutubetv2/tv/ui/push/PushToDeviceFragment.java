@@ -63,7 +63,7 @@ public class PushToDeviceFragment extends GuidedStepSupportFragment {
 
     @Override
     public void onCreateActions(@NonNull List<GuidedAction> actions, Bundle savedInstanceState) {
-        actions.add(new GuidedAction.Builder().id(ACTION_CLOSE).title(getString(R.string.dialog_close)).build());
+        actions.add(new GuidedAction.Builder().id(ACTION_CLOSE).title(getString(R.string.back_to_summary)).build());
     }
 
     @Override
@@ -133,4 +133,3 @@ public class PushToDeviceFragment extends GuidedStepSupportFragment {
         return bmp;
     }
 }
-

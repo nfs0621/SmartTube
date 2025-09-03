@@ -12,4 +12,15 @@ public class PairApiKeyActivity extends LeanbackActivity {
             GuidedStepSupportFragment.addAsRoot(this, new PairApiKeyFragment(), android.R.id.content);
         }
     }
+
+    @Override
+    public void finish() {
+        // Avoid triggering global app-exit logic
+        finishReally();
+    }
+
+    @Override
+    public void onBackPressed() {
+        finishReally();
+    }
 }

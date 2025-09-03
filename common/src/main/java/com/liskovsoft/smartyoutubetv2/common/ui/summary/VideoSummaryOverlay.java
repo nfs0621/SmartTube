@@ -24,6 +24,7 @@ public class VideoSummaryOverlay {
     private View previousFocus;
     private View emailBtn;
     private TextView footerMeta;
+    private boolean firstContentShown;
     public interface OnEmailListener { void onEmail(); }
     private OnEmailListener onEmailListener;
     public void setOnEmailListener(OnEmailListener l) { 
@@ -137,6 +138,15 @@ public class VideoSummaryOverlay {
         }
 
         content.addView(root);
+
+        // Keep focus on overlay while visible (avoid leaking focus to underlying views)
+        root.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus, newFocus) -> {
+            if (isVisible()) {
+                if (newFocus == null || false) {
+                    root.requestFocus();
+                }
+            }
+        });
     }
 
     private void scrollBy(int dy) {
@@ -149,6 +159,7 @@ public class VideoSummaryOverlay {
 
     public void showLoading(CharSequence workingText) {
         ensureInflated();
+        firstContentShown = false;
         previousFocus = activity.getCurrentFocus();
         root.setVisibility(View.VISIBLE);
         progress.setVisibility(View.VISIBLE);
@@ -161,8 +172,18 @@ public class VideoSummaryOverlay {
         ensureInflated();
         progress.setVisibility(View.GONE);
         status.setText(title);
+        int prevY = scroll != null ? scroll.getScrollY() : 0;
         text.setText(body);
-        handler.post(() -> scroll.scrollTo(0, 0));
+        handler.post(() -> {
+            if (!firstContentShown) {
+                // On first render, start at top
+                scroll.scrollTo(0, 0);
+                firstContentShown = true;
+            } else if (prevY > 0) {
+                // Preserve user position on subsequent updates (comments/fact-check)
+                scroll.scrollTo(0, prevY);
+            }
+        });
         root.requestFocus(); // Ensure overlay keeps focus for D-pad navigation
     }
 
@@ -191,5 +212,8 @@ public class VideoSummaryOverlay {
         return text != null ? text.getText() : "";
     }
 }
+
+
+
 
 

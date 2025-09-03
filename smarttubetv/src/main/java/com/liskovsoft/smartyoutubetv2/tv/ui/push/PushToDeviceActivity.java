@@ -18,4 +18,9 @@ public class PushToDeviceActivity extends LeanbackActivity {
         // Avoid global app-exit logic in LeanbackActivity
         finishReally();
     }
+
+    @Override
+    public void onBackPressed() {
+        finishReally();
+    }
 }

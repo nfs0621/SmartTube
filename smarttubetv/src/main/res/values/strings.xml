@@ -126,5 +126,8 @@
     <string translatable="false" name="dialog_close">Close</string>
     <string translatable="false" name="push_to_device_title">Push To Device</string>
     <string translatable="false" name="push_to_device_desc">Scan the QR to open this video details on your phone.</string>
+    <string translatable="false" name="back">Back</string>
+    <string translatable="false" name="back_to_summary">Back to summary</string>
 </resources>
+
 

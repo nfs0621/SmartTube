@@ -1,40 +1,44 @@
-# Repository Guidelines
+# Agent Operations Guide
 
-## Project Structure & Module Organization
-- Modules: `smarttubetv` (app), `common` (shared core), `chatkit`, `leanback-1.0.0`, `fragment-1.1.0`, `filepicker-lib`, vendored `exoplayer-amzn-2.10.6`. External submodules: `MediaServiceCore`, `SharedModules`.
-- App sources: `smarttubetv/src/main/{java,res,assets}`. Product flavors under `smarttubetv/src/<flavor>` (e.g., `ststable`, `stbeta`, `storig`) override manifests/resources.
-- Assets/docs: `images/`. Helper scripts: `scripts/`.
-- Tests: unit in `src/test/java`; instrumented in `src/androidTest/java` per module.
+This doc captures repeatable workflows so the agent can deploy and verify without re-deriving steps each session.
 
-## Build, Test, and Development Commands
-- Build all: `./gradlew clean build` — compiles, runs unit tests, and lints.
-- Assemble stable APKs: `./gradlew :smarttubetv:assembleStstableDebug` (or `assembleStstableRelease`). Output: `smarttubetv/build/outputs/apk/ststable/<buildType>/` (ABI‑split).
-- Install stable (debug): `./gradlew :smarttubetv:installStstableDebug` to a connected device.
-- Fast multi‑device install: `bash scripts/deploy_to_tvs.sh ststableDebug` or `powershell -File scripts/deploy_to_tvs.ps1 -Variant ststableDebug`.
-- Unit tests: `./gradlew :smarttubetv:testStstableDebugUnitTest` and `./gradlew :common:testStstableDebugUnitTest`.
-- Instrumented tests: `./gradlew :smarttubetv:connectedStstableDebugAndroidTest` (device required).
+## Deploy to TVs (ststableDebug)
 
-## Coding Style & Naming Conventions
-- Languages: Kotlin + Java 8. Indentation: 4 spaces; trim trailing whitespace; optimize imports.
-- Names: Classes `PascalCase`; methods/fields `camelCase`; constants `UPPER_SNAKE_CASE`.
-- Resources: `lowercase_with_underscores` (e.g., `ic_play_arrow.xml`).
-- Flavors: keep `st*` prefix; overrides under `smarttubetv/src/<flavor>/`.
-- Lint/format: use Android Studio formatter; run `./gradlew lint` before PRs.
+Prereqs:
+- Android SDK platform-tools (`adb`) in PATH
+- TVs reachable via ADB over network; their addresses listed in `scripts/devices.txt`
 
-## Testing Guidelines
-- Frameworks: JUnit 4 + Robolectric (unit); AndroidX Test + Espresso (UI/instrumented).
-- Layout: unit in `src/test/java`; instrumented in `src/androidTest/java`.
-- Naming: `SomethingTest.kt`/`.java`. Prefer small, deterministic unit tests (especially in `common` and view‑model logic); reserve instrumented tests for UI flows.
+Fast path (recommended):
+1) Build APKs
+   - Windows: `./gradlew.bat :smarttubetv:assembleStstableDebug`
+   - Linux/macOS: `./gradlew :smarttubetv:assembleStstableDebug`
+2) Deploy via script
+   - Windows: `powershell -File scripts/deploy_to_tvs.ps1 -Variant ststableDebug`
+   - Linux/macOS: `bash scripts/deploy_to_tvs.sh ststableDebug`
 
-## Commit & Pull Request Guidelines
-- Commits: short, imperative subjects; optional scope (e.g., `exoplayer:`, `video loader:`). Group related changes.
-- PRs: include summary, rationale, and screenshots for UI changes; link issues; note affected flavors; ensure `./gradlew build` and tests pass.
+Manual fallback (if script says "No devices found"):
+1) Connect devices from `scripts/devices.txt`:
+   ```
+   for each line in scripts/devices.txt:
+     adb connect <ip:port>
+   adb devices -l
+   ```
+2) Determine ABI and install matching APK:
+   ```
+   # Query ABI
+   adb -s <serial> shell getprop ro.product.cpu.abi
 
-## Security & Configuration Tips
-- Enable Crashlytics/Google Services only when `google-services.json` is present and only for select flavors (`stbeta`, `strtarmenia`). Never commit secrets.
-- APK naming: `SmartTube_<flavor>_<version>_<abi>.apk`. Verify flavor/ABI before distributing.
-- Environment: Android Studio (SDK 34) or CLI with JDK 11+; set Android SDK via `ANDROID_HOME`.
+   # APKs built at:
+   smarttubetv/build/outputs/apk/ststable/debug/
+     SmartTube_stable_<version>_arm64-v8a.apk
+     SmartTube_stable_<version>_armeabi-v7a.apk
+     SmartTube_stable_<version>_x86.apk
 
-## Flavor Policy
-- Use `ststable` by default. Avoid `stbeta` unless explicitly requested.
+   # Install
+   adb -s <serial> install -r -t -g <path-to-apk>
+   ```
+
+Notes:
+- The deploy PS1 parses `adb devices`; in some shells it may fail. Manual fallback is reliable.
+- Update `scripts/devices.txt` with TV IPs (e.g., `192.168.0.124:5555`).
 

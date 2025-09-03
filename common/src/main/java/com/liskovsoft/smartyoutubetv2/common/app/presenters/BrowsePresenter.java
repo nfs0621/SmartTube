@@ -726,16 +726,27 @@ public class BrowsePresenter extends BasePresenter<BrowseView> implements Sectio
                                 // Locally hide fully watched items from Home recommendations
                                 if (isHomeSection()) {
                                     VideoStateService stateService = VideoStateService.instance(getContext());
-                                    if (stateService != null) {
-                                        int size = videoGroup.getSize();
-                                        for (int i = size - 1; i >= 0; i--) {
-                                            Video v = videoGroup.get(i);
-                                            if (v == null) continue;
+                                    int size = videoGroup.getSize();
+                                    for (int i = size - 1; i >= 0; i--) {
+                                        Video v = videoGroup.get(i);
+                                        if (v == null) continue;
+
+                                        float localPercent = v.percentWatched;
+
+                                        // Prefer precise local progress when available; fall back to server percent
+                                        if (stateService != null) {
                                             State s = stateService.getByVideoId(v.videoId);
-                                            float localPercent = s != null && s.durationMs > 0 ? (s.positionMs / (s.durationMs / 100f)) : v.percentWatched;
-                                            if (localPercent > 80f && !v.isLive) {
-                                                videoGroup.remove(v);
+                                            if (s != null) {
+                                                // Use state duration if present; otherwise try video duration
+                                                long denom = s.durationMs > 0 ? s.durationMs : v.getDurationMs();
+                                                if (denom > 0) {
+                                                    localPercent = (s.positionMs * 100f) / denom;
+                                                }
                                             }
+                                        }
+
+                                        if (localPercent >= 80f && !v.isLive) {
+                                            videoGroup.remove(v);
                                         }
                                     }
                                 }

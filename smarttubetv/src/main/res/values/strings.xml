@@ -124,4 +124,7 @@
     <string translatable="false" name="api_key_pairing_desc">On your phone, open the shown URL and enter the PIN.</string>
     <string translatable="false" name="api_key_saved_toast">API key saved</string>
     <string translatable="false" name="dialog_close">Close</string>
+    <string translatable="false" name="push_to_device_title">Push To Device</string>
+    <string translatable="false" name="push_to_device_desc">Scan the QR to open this video details on your phone.</string>
 </resources>
+

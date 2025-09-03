@@ -48,7 +48,12 @@ public class GeminiClient implements AIClient {
     private Integer lastTotalTokens;
 
     public GeminiClient(Context context) {
-        this.apiKey = loadApiKey(context);
+        String k = null;
+        try {
+            k = com.liskovsoft.smartyoutubetv2.common.prefs.ApiKeyPrefs.instance(context).getGeminiKey();
+            if (k != null) k = k.trim();
+        } catch (Throwable ignore) { }
+        this.apiKey = !TextUtils.isEmpty(k) ? k : loadApiKey(context);
         com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(context);
         this.prefLang = gd.getPreferredLanguage();
         this.debug = gd.isDebugLogging();

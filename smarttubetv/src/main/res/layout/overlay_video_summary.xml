@@ -48,7 +48,7 @@
                     android:textColor="#FFFFFF"
                     android:textSize="20sp"
                     android:textStyle="bold"
-                    android:text="🧠 AI Summary" />
+                    android:text="AI Summary" />
             </LinearLayout>
 
             <View
@@ -90,13 +90,13 @@
                     android:layout_weight="1"
                     android:textColor="#B3FFFFFF"
                     android:textSize="14sp"
-                    android:text="▲/▼ Scroll   •   ◀/▶/Back Close" />
+                    android:text="Up/Down Scroll - Back to Close" />
 
                 <Button
                     android:id="@+id/gemini_email_btn"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="✉ Email"
+                    android:text="Push"
                     android:textAllCaps="false"
                     android:minWidth="0dp"
                     android:paddingLeft="16dp"

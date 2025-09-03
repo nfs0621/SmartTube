@@ -1177,41 +1177,24 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
         final java.util.concurrent.atomic.AtomicReference<String> commentsRef = new java.util.concurrent.atomic.AtomicReference<>(null);
         final java.util.concurrent.atomic.AtomicReference<String> factRef = new java.util.concurrent.atomic.AtomicReference<>(null);
 
-        // Set up email functionality (if enabled)
-        if (gd.isEmailSummariesEnabled()) {
-            summaryOverlay.setOnEmailListener(() -> {
-                try {
-                    String to = gd.getSummaryEmail();
-                    if (to == null || to.isEmpty()) {
-                        android.widget.Toast.makeText(getContext(), "Set summary email in Settings", android.widget.Toast.LENGTH_LONG).show();
-                        return;
-                    }
-                    String subject = "SmartTube Summary: " + (video.title != null ? video.title : "Video");
-                    String link = video.videoId != null ? ("https://www.youtube.com/watch?v=" + video.videoId) : "";
-                    StringBuilder body = new StringBuilder();
-                    body.append("Title: ").append(video.title).append("\n");
-                    body.append("Channel: ").append(video.author).append("\n");
-                    if (!link.isEmpty()) body.append("Link: ").append(link).append("\n");
-                    body.append("\nSummary:\n").append(summary);
-
-                    android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_SENDTO);
-                    intent.setData(android.net.Uri.parse("mailto:"));
-                    intent.putExtra(android.content.Intent.EXTRA_EMAIL, new String[]{to});
-                    intent.putExtra(android.content.Intent.EXTRA_SUBJECT, subject);
-                    intent.putExtra(android.content.Intent.EXTRA_TEXT, body.toString());
-                    try {
-                        activity.startActivity(intent);
-                    } catch (Throwable e) {
-                        android.widget.Toast.makeText(getContext(), "No email app found", android.widget.Toast.LENGTH_LONG).show();
-                    }
-                } catch (Throwable e) {
-                    android.util.Log.e("VideoMenuPresenter", "Email summary error: " + e.getMessage());
-                }
-            });
-        } else {
-            // Hide email button when disabled
-            summaryOverlay.setOnEmailListener(null);
-        }
+        // Replace email with local push-to-device: show QR that opens a local page with metadata
+        summaryOverlay.setOnEmailListener(() -> {
+            try {
+                android.content.Intent i = new android.content.Intent();
+                i.setClassName(activity.getPackageName(), "com.liskovsoft.smartyoutubetv2.tv.ui.push.PushToDeviceActivity");
+                i.putExtra("title", video.title);
+                i.putExtra("author", video.author);
+                String link = video.videoId != null ? ("https://www.youtube.com/watch?v=" + video.videoId) : null;
+                i.putExtra("link", link);
+                i.putExtra("desc", String.valueOf(summaryOverlay.getCurrentText()));
+                // Optional metadata
+                /* published omitted */
+                try { String dur = (video.mediaItem != null && video.mediaItem.getDurationMs() > 0) ? com.liskovsoft.googlecommon.common.helpers.ServiceHelper.millisToTimeText(video.mediaItem.getDurationMs()) : null; if (dur != null) i.putExtra("duration", dur); } catch (Throwable ignored) {}
+                activity.startActivity(i);
+            } catch (Throwable e) {
+                android.util.Log.e("VideoMenuPresenter", "Push to device error: " + e.getMessage());
+            }
+        });
 
         // Summarize comments (async) if enabled
         if (gd.isCommentsSummaryEnabled()) {
@@ -1299,7 +1282,7 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                         factCheckResult = gemini.factCheck(summary, video.title, video.author, video.videoId);
                     }
                     
-                    android.util.Log.d("VideoMenuPresenter", "Fact check result: " + (factCheckResult != null ? "SUCCESS (" + factCheckResult.length() + " chars)" : "NULL"));
+            android.util.Log.d("VideoMenuPresenter", "Fact check result: " + (factCheckResult != null ? "SUCCESS (" + factCheckResult.length() + " chars)" : "NULL"));
                     
                     if (factCheckResult != null && !factCheckResult.isEmpty()) {
                         // Update overlay with fact check results
@@ -1357,3 +1340,5 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
         return "AI Provider: " + provNice + " • AI Model: " + mdl + " • Time: " + timeStr + " • Tokens: " + tokensStr;
     }
 }
+
+

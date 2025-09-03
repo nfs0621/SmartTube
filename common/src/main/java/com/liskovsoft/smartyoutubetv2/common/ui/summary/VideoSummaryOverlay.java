@@ -184,4 +184,12 @@ public class VideoSummaryOverlay {
     public boolean isVisible() {
         return root != null && root.getVisibility() == View.VISIBLE;
     }
+
+
+    public CharSequence getCurrentText() {
+        ensureInflated();
+        return text != null ? text.getText() : "";
+    }
 }
+
+

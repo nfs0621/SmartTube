@@ -199,6 +199,14 @@
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|layoutDirection"
             android:screenOrientation="unspecified"/>
 
+        <activity
+            android:name="com.liskovsoft.smartyoutubetv2.tv.ui.push.PushToDeviceActivity"
+            android:launchMode="singleInstance"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|layoutDirection"
+            android:screenOrientation="unspecified"
+            android:theme="@style/App.Theme.Leanback.GuidedStep"
+            android:exported="false"/>
+
         <!-- BEGIN Launchers (used inside tvQuickActions. Don't rename them or move!) -->
 
         <activity

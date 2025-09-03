@@ -35,7 +35,12 @@ public class OpenAIClient implements AIClient {
 
     public OpenAIClient(Context context) {
         this.ctx = context.getApplicationContext();
-        this.apiKey = loadApiKey(this.ctx);
+        String k = null;
+        try {
+            k = com.liskovsoft.smartyoutubetv2.common.prefs.ApiKeyPrefs.instance(this.ctx).getOpenAIKey();
+            if (k != null) k = k.trim();
+        } catch (Throwable ignore) { }
+        this.apiKey = !TextUtils.isEmpty(k) ? k : loadApiKey(this.ctx);
     }
 
     @Override

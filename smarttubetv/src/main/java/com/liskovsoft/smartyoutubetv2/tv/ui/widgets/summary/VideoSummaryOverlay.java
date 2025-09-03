@@ -140,5 +140,12 @@ public class VideoSummaryOverlay {
     public void setOnEmailListener(OnEmailListener l) { this.onEmailListener = l; }
 
     
+
+
+    public CharSequence getCurrentText() {
+        ensureInflated();
+        return text != null ? text.getText() : "";
+    }
 }
+
 

@@ -141,10 +141,10 @@ public class VideoSummaryOverlay {
 
         // Keep focus on overlay while visible (avoid leaking focus to underlying views)
         root.getViewTreeObserver().addOnGlobalFocusChangeListener((oldFocus, newFocus) -> {
-            if (isVisible()) {
-                if (newFocus == null || false) {
-                    root.requestFocus();
-                }
+            if (!isVisible()) return;
+            // If focus moves outside of overlay (or is null), pull it back to the overlay
+            if (newFocus == null || !isDescendant((ViewGroup) root, newFocus)) {
+                root.requestFocus();
             }
         });
     }
@@ -210,6 +210,17 @@ public class VideoSummaryOverlay {
     public CharSequence getCurrentText() {
         ensureInflated();
         return text != null ? text.getText() : "";
+    }
+
+    private static boolean isDescendant(ViewGroup parent, View child) {
+        if (parent == null || child == null) return false;
+        View current = child;
+        while (current != null) {
+            if (current == parent) return true;
+            if (!(current.getParent() instanceof View)) return false;
+            current = (View) current.getParent();
+        }
+        return false;
     }
 }
 

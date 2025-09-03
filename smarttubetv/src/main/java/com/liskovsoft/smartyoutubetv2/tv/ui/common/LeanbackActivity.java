@@ -131,6 +131,19 @@ public abstract class LeanbackActivity extends MotherActivity {
 
     @Override
     public void finishReally() {
+        // Special-case lightweight transient screens that should just close
+        // and reveal the underlying activity as-is (e.g., Push-to-Device QR).
+        // This avoids starting parent activities or moving the task to back,
+        // which would break overlay focus/return flow.
+        if (this instanceof com.liskovsoft.smartyoutubetv2.tv.ui.push.PushToDeviceActivity) {
+            try {
+                // Call base Activity finish to simply close this screen
+                super.finish();
+            } catch (Exception ignored) {}
+            return;
+        }
+
+        // Default behavior: navigate to parent view and finish the activity.
         // Mandatory line. Fix un-proper view order (especially for playback view).
         getViewManager().startParentView(this);
         super.finishReally();

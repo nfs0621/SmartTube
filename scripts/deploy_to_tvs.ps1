@@ -25,6 +25,18 @@ $taskFlavor = ($flavor.Substring(0,1).ToUpper() + $flavor.Substring(1)) + $build
 Write-Host "[deploy] Building APKs for variant: $taskFlavor"
 ./gradlew ":smarttubetv:assemble$taskFlavor"
 
+$cfgFile = Join-Path $PSScriptRoot 'devices.txt'
+if (Test-Path $cfgFile) {
+  Write-Host "[deploy] Auto-connecting ADB to devices in devices.txt..."
+  Get-Content $cfgFile | ForEach-Object {
+    $addr = $_.Trim()
+    if (-not [string]::IsNullOrWhiteSpace($addr)) {
+      try { adb disconnect $addr | Out-Null } catch {}
+      try { adb connect $addr | Out-Null } catch {}
+    }
+  }
+}
+
 Write-Host "[deploy] Detecting connected devices..."
 $adbOut = adb devices
 $serials = @()

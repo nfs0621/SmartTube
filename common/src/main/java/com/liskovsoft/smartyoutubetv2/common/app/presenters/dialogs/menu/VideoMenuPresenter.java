@@ -1202,35 +1202,41 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                 try {
                     // Fetch comments key from metadata (blocking)
                     com.liskovsoft.mediaserviceinterfaces.data.MediaItemMetadata md = mMediaItemService.getMetadata(video.videoId);
-                    String commentsKey = md != null ? md.getCommentsKey() : null;
-                    if (commentsKey == null) return; // no comments
+                    String nextKey = md != null ? md.getCommentsKey() : null;
+                    if (nextKey == null) return; // no comments
 
                     java.util.List<String> texts = new java.util.ArrayList<>();
-                    java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
-                    io.reactivex.disposables.Disposable[] holder = new io.reactivex.disposables.Disposable[1];
-                    holder[0] = getCommentsService().getCommentsObserve(commentsKey)
-                            .subscribe(group -> {
-                                try {
-                                    if (group != null && group.getComments() != null) {
-                                        int max = gd.getCommentsMaxCount();
-                                        int count = 0;
-                                        for (com.liskovsoft.mediaserviceinterfaces.data.CommentItem item : group.getComments()) {
-                                            if (item == null || item.getMessage() == null) continue;
-                                            texts.add(item.getMessage());
-                                            count++;
-                                            if (count >= max) break;
+                    int max = Math.max(0, gd.getCommentsMaxCount());
+                    // Paginate until we reach the configured max or run out of pages/time.
+                    long deadlineNs = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(25);
+                    while ((max == 0 || texts.size() < max) && nextKey != null && System.nanoTime() < deadlineNs) {
+                        final java.util.concurrent.CountDownLatch pageLatch = new java.util.concurrent.CountDownLatch(1);
+                        final io.reactivex.disposables.Disposable[] subHolder = new io.reactivex.disposables.Disposable[1];
+                        final String[] outNextKey = new String[1];
+                        subHolder[0] = getCommentsService().getCommentsObserve(nextKey)
+                                .subscribe(group -> {
+                                    try {
+                                        if (group != null && group.getComments() != null) {
+                                            for (com.liskovsoft.mediaserviceinterfaces.data.CommentItem item : group.getComments()) {
+                                                if (item == null || item.getMessage() == null) continue;
+                                                if (max > 0 && texts.size() >= max) break;
+                                                texts.add(item.getMessage());
+                                            }
+                                            outNextKey[0] = group.getNextCommentsKey();
                                         }
+                                    } finally {
+                                        if (subHolder[0] != null) subHolder[0].dispose();
+                                        pageLatch.countDown();
                                     }
-                                } finally {
-                                    if (holder[0] != null) holder[0].dispose();
-                                    latch.countDown();
-                                }
-                            }, err -> {
-                                if (holder[0] != null) holder[0].dispose();
-                                latch.countDown();
-                            });
-                    // Wait for first page (fetch can be slow on some videos/networks)
-                    latch.await(20, java.util.concurrent.TimeUnit.SECONDS);
+                                }, err -> {
+                                    if (subHolder[0] != null) subHolder[0].dispose();
+                                    pageLatch.countDown();
+                                });
+                        // Wait for this page (cap per-page wait to 8s)
+                        pageLatch.await(8, java.util.concurrent.TimeUnit.SECONDS);
+                        nextKey = outNextKey[0];
+                        if (max > 0 && texts.size() >= max) break;
+                    }
 
                     if (texts.isEmpty()) return;
                     android.util.Log.d("VideoMenuPresenter", "Comments collected for summary: " + texts.size());
@@ -1241,7 +1247,8 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
                     } else {
                         aiComments = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(getContext());
                     }
-                    String csum = aiComments.summarizeComments(video.title, video.author, video.videoId, texts, Math.min(texts.size(), gd.getCommentsMaxCount()));
+                    int analyzed = max > 0 ? Math.min(texts.size(), max) : texts.size();
+                    String csum = aiComments.summarizeComments(video.title, video.author, video.videoId, texts, analyzed);
                     if (csum == null || csum.isEmpty()) return;
                     commentsRef.set(csum);
 

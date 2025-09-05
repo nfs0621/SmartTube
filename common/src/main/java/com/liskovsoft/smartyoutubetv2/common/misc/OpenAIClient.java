@@ -103,9 +103,30 @@ public class OpenAIClient implements AIClient {
         String transcript = GeminiClient.fetchTranscriptForSummary(ctx, videoId);
         boolean officialAvailable = GeminiClient.hasOfficialCC(ctx, videoId);
         String prompt = buildPrompt(title, author, videoId, detailLevel, transcript, officialAvailable);
-        String result = callOpenAI(prompt);
-        lastUsedModel = getModel();
-        return result;
+        try {
+            String result = callOpenAI(prompt);
+            lastUsedModel = getModel();
+            return result;
+        } catch (Throwable t) {
+            // Fallback to Gemini 2.5 Flash on context-length issues
+            String msg = t.getMessage() != null ? t.getMessage().toLowerCase() : "";
+            boolean tooLarge = msg.contains("maximum context length") || msg.contains("context_length_exceeded") ||
+                               (msg.contains("context") && msg.contains("length")) || msg.contains("too large") ||
+                               (msg.contains("token") && msg.contains("limit")) || msg.contains("413");
+            if (tooLarge) {
+                com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(ctx);
+                String prevModel = gd.getModel();
+                try {
+                    gd.setModel("gemini-2.5-flash");
+                    com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient g = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(ctx);
+                    return g.summarize(title, author, videoId, detailLevel, startTimeSeconds);
+                } finally {
+                    // restore user preference
+                    try { gd.setModel(prevModel); } catch (Throwable ignore) {}
+                }
+            }
+            throw t;
+        }
     }
 
     @Override
@@ -131,9 +152,28 @@ public class OpenAIClient implements AIClient {
         sb.append("\nNow produce the Comments Summary.\n");
         sb.append("End with a footer line: '--- Comments analyzed: ").append(analyzedCount).append("'.");
         String prompt = sb.toString();
-        String result = callOpenAI(prompt);
-        lastUsedModel = getModel();
-        return result;
+        try {
+            String result = callOpenAI(prompt);
+            lastUsedModel = getModel();
+            return result;
+        } catch (Throwable t) {
+            String msg = t.getMessage() != null ? t.getMessage().toLowerCase() : "";
+            boolean tooLarge = msg.contains("maximum context length") || msg.contains("context_length_exceeded") ||
+                               (msg.contains("context") && msg.contains("length")) || msg.contains("too large") ||
+                               (msg.contains("token") && msg.contains("limit")) || msg.contains("413");
+            if (tooLarge) {
+                com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData gd = com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(ctx);
+                String prevModel = gd.getModel();
+                try {
+                    gd.setModel("gemini-2.5-flash");
+                    com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient g = new com.liskovsoft.smartyoutubetv2.common.misc.GeminiClient(ctx);
+                    return g.summarizeComments(videoTitle, author, videoId, comments, analyzedCount);
+                } finally {
+                    try { gd.setModel(prevModel); } catch (Throwable ignore) {}
+                }
+            }
+            throw t;
+        }
     }
 
     @Override

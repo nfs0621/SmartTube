@@ -561,6 +561,14 @@ public class PlayerUIController extends BasePlayerController {
             openChannel();
         } else if (buttonId == R.id.action_playback_queue) {
             AppDialogUtil.showPlaybackQueueDialog(getContext(), item -> getMainController().onNewVideo(item));
+        } else if (buttonId == R.id.action_ai_summary) {
+            // Trigger AI Summary exactly like the context menu option
+            Video current = getVideo();
+            if (current != null) {
+                com.liskovsoft.smartyoutubetv2.common.app.presenters.dialogs.menu.VideoMenuPresenter
+                        .instance(getContext())
+                        .showGeminiSummaryFor(current);
+            }
         }
     }
 

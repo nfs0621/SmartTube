@@ -153,6 +153,16 @@ public class VideoMenuPresenter extends BaseMenuPresenter {
         MediaServiceManager.instance().authCheck(this::bootstrapPrepareAndShowDialogSigned, this::prepareAndShowDialogUnsigned);
     }
 
+    /**
+     * Trigger AI Summary directly for the given video without opening the context menu.
+     */
+    public void showGeminiSummaryFor(Video video) {
+        if (video == null) return;
+        mVideo = video;
+        sVideoHolder = new WeakReference<>(video);
+        showGeminiSummary();
+    }
+
     private void bootstrapPrepareAndShowDialogSigned() {
         mPlaylistInfos = null;
         RxHelper.disposeActions(mPlaylistsInfoAction);

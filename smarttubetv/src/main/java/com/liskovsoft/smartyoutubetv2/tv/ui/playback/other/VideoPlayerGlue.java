@@ -28,6 +28,7 @@ import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.tweaks.MaxCo
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.tweaks.PlaybackTransportRowPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.widget.OnActionLongClickedListener;
 import com.liskovsoft.smartyoutubetv2.tv.ui.playback.actions.AFRAction;
+import com.liskovsoft.smartyoutubetv2.tv.ui.playback.actions.AISummaryAction;
 import com.liskovsoft.smartyoutubetv2.tv.ui.playback.actions.ActionHelpers;
 import com.liskovsoft.smartyoutubetv2.tv.ui.playback.actions.ChannelAction;
 import com.liskovsoft.smartyoutubetv2.tv.ui.playback.actions.ChatAction;
@@ -84,6 +85,7 @@ public class VideoPlayerGlue extends MaxControlsVideoPlayerGlue<PlayerAdapter> i
     private final PlaybackControlsRow.SkipPreviousAction mSkipPreviousAction;
     private final PlaybackControlsRow.SkipNextAction mSkipNextAction;
     private final PlaybackControlsRow.FastForwardAction mFastForwardAction;
+    private final Action mAISummaryAction;
     private final PlaybackControlsRow.RewindAction mRewindAction;
     private final HighQualityAction mHighQualityAction;
     private final ClosedCaptioningAction mClosedCaptioningAction;
@@ -131,6 +133,7 @@ public class VideoPlayerGlue extends MaxControlsVideoPlayerGlue<PlayerAdapter> i
         mVideoZoomAction = new VideoZoomAction(context);
         mPipAction = new PipAction(context);
         mVideoInfoAction = new VideoInfoAction(context);
+        mAISummaryAction = new AISummaryAction(context);
         mShareAction = new ShareAction(context);
         mSeekIntervalAction = new SeekIntervalAction(context);
 
@@ -142,6 +145,8 @@ public class VideoPlayerGlue extends MaxControlsVideoPlayerGlue<PlayerAdapter> i
         putAction(new SoundOffAction(context));
         putAction(new AFRAction(context));
         putAction(new PlaybackModeAction(context));
+        // Register AI Summary so it routes via generic onAction handler
+        putAction(mAISummaryAction);
         putAction(new ChannelAction(context));
         putAction(new ChatAction(context));
         putAction(new PlaybackQueueAction(context));
@@ -214,6 +219,11 @@ public class VideoPlayerGlue extends MaxControlsVideoPlayerGlue<PlayerAdapter> i
         // MAX: 7 items. But with custom modification it supports more.
         // Origin: {@link androidx.leanback.widget.ControlBarPresenter#MAX_CONTROLS}
         // Custom mod: {@link com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.ControlBarPresenter#MAX_CONTROLS}
+
+        // Insert AI Summary at the beginning of the bottom row using the provided adapter.
+        // Using the method argument is important here because getControlsRow().getSecondaryActionsAdapter()
+        // may not yet be initialized at this stage.
+        adapter.add(0, mAISummaryAction);
 
         if (mPlayerTweaksData.isPlayerButtonEnabled(PlayerTweaksData.PLAYER_BUTTON_HIGH_QUALITY)) {
             adapter.add(mHighQualityAction);

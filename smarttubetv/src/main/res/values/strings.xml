@@ -128,6 +128,7 @@
     <string translatable="false" name="push_to_device_desc">Scan the QR to open this video details on your phone.</string>
     <string translatable="false" name="back">Back</string>
     <string translatable="false" name="back_to_summary">Back to summary</string>
+    <string translatable="false" name="action_ai_summary">AI Summary</string>
 </resources>
 
 

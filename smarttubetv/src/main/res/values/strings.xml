@@ -129,6 +129,8 @@
     <string translatable="false" name="back">Back</string>
     <string translatable="false" name="back_to_summary">Back to summary</string>
     <string translatable="false" name="action_ai_summary">AI Summary</string>
+    <string translatable="false" name="tts_listen">Listen</string>
+    <string translatable="false" name="tts_stop">Stop</string>
 </resources>
 
 

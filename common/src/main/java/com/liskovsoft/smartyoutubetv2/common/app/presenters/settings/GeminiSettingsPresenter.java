@@ -32,6 +32,7 @@ public class GeminiSettingsPresenter {
         enabled.add(UiOptionItem.from("Fact check summaries (uses web search)", opt -> data.setFactCheckEnabled(opt.isSelected()), data.isFactCheckEnabled()));
         enabled.add(UiOptionItem.from("Auto mark as watched on summary", opt -> data.setMarkAsWatchedEnabled(opt.isSelected()), data.isMarkAsWatchedEnabled()));
         enabled.add(UiOptionItem.from("Summarize comments in overlay", opt -> data.setCommentsSummaryEnabled(opt.isSelected()), data.isCommentsSummaryEnabled()));
+        enabled.add(UiOptionItem.from("Speak AI summary on open", opt -> data.setTtsSpeakOnOpen(opt.isSelected()), data.isTtsSpeakOnOpen()));
         dlg.appendCheckedCategory(context.getString(R.string.gemini_category_title), enabled);
 
         // Delay options removed (no auto-summary)
@@ -138,6 +139,16 @@ public class GeminiSettingsPresenter {
         // Future: add "Recent comments"
         dlg.appendRadioCategory("Comments source", commentsSource);
 
+        // Speaking speed (TTS)
+        List<OptionItem> ttsSpeed = new ArrayList<>();
+        float rate = data.getTtsRate();
+        ttsSpeed.add(UiOptionItem.from("1.2x", opt -> applyTtsRate(1.2f), Math.abs(rate - 1.2f) < 0.01f));
+        ttsSpeed.add(UiOptionItem.from("1.5x", opt -> applyTtsRate(1.5f), Math.abs(rate - 1.5f) < 0.01f));
+        ttsSpeed.add(UiOptionItem.from("1.7x (default)", opt -> applyTtsRate(1.7f), Math.abs(rate - 1.7f) < 0.01f));
+        ttsSpeed.add(UiOptionItem.from("1.9x", opt -> applyTtsRate(1.9f), Math.abs(rate - 1.9f) < 0.01f));
+        ttsSpeed.add(UiOptionItem.from("2.2x (fast)", opt -> applyTtsRate(2.2f), Math.abs(rate - 2.2f) < 0.01f));
+        dlg.appendRadioCategory("Speaking speed", ttsSpeed);
+
         // Layout
         List<OptionItem> layout = new ArrayList<>();
         layout.add(UiOptionItem.from("Compact layout (smaller text, tighter spacing)", opt -> data.setCompactLayout(opt.isSelected()), data.isCompactLayout()));
@@ -161,6 +172,13 @@ public class GeminiSettingsPresenter {
         dlg.appendStringsCategory("Email", email);
 
         dlg.showDialog(context.getString(R.string.gemini_settings_title), null);
+    }
+
+    private void applyTtsRate(float rate) {
+        data.setTtsRate(rate);
+        try {
+            com.liskovsoft.smartyoutubetv2.common.utils.TtsManager.instance(context).setRate(rate);
+        } catch (Throwable ignored) {}
     }
 
     private void showOpenAICustomModelDialog(Context ctx, String current) {

@@ -23,6 +23,7 @@ public class VideoSummaryOverlay {
     private ScrollView scroll;
     private View previousFocus;
     private View emailBtn;
+    private android.widget.Button listenBtn;
     private TextView footerMeta;
     private boolean firstContentShown;
     public interface OnEmailListener { void onEmail(); }
@@ -51,6 +52,10 @@ public class VideoSummaryOverlay {
         status = root.findViewById(R.id.gemini_status);
         text = root.findViewById(R.id.gemini_text);
         scroll = root.findViewById(R.id.gemini_scroll);
+        if (scroll != null) {
+            scroll.setFocusable(true);
+            scroll.setFocusableInTouchMode(true);
+        }
         footerMeta = root.findViewById(R.id.gemini_footer_meta);
         // Apply compact layout if enabled in settings
         try {
@@ -74,36 +79,47 @@ public class VideoSummaryOverlay {
             public boolean dispatchKeyEvent(KeyEvent event) {
                 if (event.getAction() == KeyEvent.ACTION_DOWN) {
                     int keyCode = event.getKeyCode();
-                    
-                    // Close overlay on back/left/right only; allow Select/Enter to reach focused child
-                    if (keyCode == KeyEvent.KEYCODE_BACK || 
-                        keyCode == KeyEvent.KEYCODE_DPAD_LEFT || 
-                        keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+                    View currentFocus = findFocus();
+
+                    // Back/Escape closes overlay
+                    if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_ESCAPE) {
                         hide();
                         return true;
                     }
-                    // Scroll with up/down
-                    else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-                        if (emailBtn != null && emailBtn.hasFocus()) {
-                            // Move focus back to scrollable text when navigating up from button
-                            scroll.requestFocus();
+                    // Play/Pause toggles TTS
+                    if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
+                        toggleSpeak();
+                        return true;
+                    }
+                    // Up: from buttons return to text; otherwise scroll up
+                    if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+                        if ((emailBtn != null && emailBtn.hasFocus()) || (listenBtn != null && listenBtn.hasFocus())) {
+                            if (scroll != null) scroll.requestFocus();
                             return true;
                         }
                         VideoSummaryOverlay.this.scrollBy(-200);
                         return true;
-                    } else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+                    }
+                    // Down: scroll if possible, else Push -> Listen
+                    if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
                         if (scroll != null && scroll.canScrollVertically(1)) {
                             VideoSummaryOverlay.this.scrollBy(200);
+                            return true;
+                        }
+                        if (currentFocus == emailBtn && listenBtn != null) {
+                            listenBtn.requestFocus();
                             return true;
                         }
                         if (emailBtn != null) {
                             emailBtn.requestFocus();
                             return true;
+                        } else if (listenBtn != null) {
+                            listenBtn.requestFocus();
+                            return true;
                         }
-                        return false;
                     }
-            }
-            return super.dispatchKeyEvent(event);
+                }
+                return super.dispatchKeyEvent(event);
             }
         };
 
@@ -127,7 +143,13 @@ public class VideoSummaryOverlay {
         }
         
         root = customRoot;
-        // Wire up Email button
+        // Wire up Listen and Email buttons
+        listenBtn = root.findViewById(com.liskovsoft.smartyoutubetv2.common.R.id.gemini_listen_btn);
+        if (listenBtn != null) {
+            listenBtn.setOnClickListener(v -> toggleSpeak());
+            listenBtn.setFocusable(true);
+            listenBtn.setFocusableInTouchMode(true);
+        }
         emailBtn = root.findViewById(R.id.gemini_email_btn);
         if (emailBtn != null) {
             emailBtn.setOnClickListener(v -> { if (onEmailListener != null) onEmailListener.onEmail(); });
@@ -165,7 +187,11 @@ public class VideoSummaryOverlay {
         progress.setVisibility(View.VISIBLE);
         status.setText(workingText != null ? workingText : "Summarizing...");
         text.setText("");
-        root.requestFocus();
+        if (scroll != null) {
+            scroll.requestFocus();
+        } else {
+            root.requestFocus();
+        }
     }
 
     public void showText(CharSequence title, CharSequence body) {
@@ -179,12 +205,22 @@ public class VideoSummaryOverlay {
                 // On first render, start at top
                 scroll.scrollTo(0, 0);
                 firstContentShown = true;
+                // Auto-speak if enabled (opt-in)
+                try {
+                    if (com.liskovsoft.smartyoutubetv2.common.prefs.GeminiData.instance(activity).isTtsSpeakOnOpen()) {
+                        handler.postDelayed(this::toggleSpeak, 350);
+                    }
+                } catch (Throwable ignored) {}
             } else if (prevY > 0) {
                 // Preserve user position on subsequent updates (comments/fact-check)
                 scroll.scrollTo(0, prevY);
             }
         });
-        root.requestFocus(); // Ensure overlay keeps focus for D-pad navigation
+        if (scroll != null) {
+            scroll.requestFocus();
+        } else {
+            root.requestFocus();
+        } // Ensure overlay keeps focus for D-pad navigation
     }
 
     public void setFooterMeta(CharSequence meta) {
@@ -197,6 +233,8 @@ public class VideoSummaryOverlay {
 
     public void hide() {
         if (root != null) {
+            // Stop TTS if speaking
+            try { com.liskovsoft.smartyoutubetv2.common.utils.TtsManager.instance(activity).stop(); } catch (Throwable ignored) {}
             root.setVisibility(View.GONE);
             if (previousFocus != null) previousFocus.requestFocus();
         }
@@ -210,6 +248,37 @@ public class VideoSummaryOverlay {
     public CharSequence getCurrentText() {
         ensureInflated();
         return text != null ? text.getText() : "";
+    }
+
+    private void toggleSpeak() {
+        com.liskovsoft.smartyoutubetv2.common.utils.TtsManager tts = com.liskovsoft.smartyoutubetv2.common.utils.TtsManager.instance(activity);
+        if (tts.isSpeaking()) {
+            tts.stop();
+            setListenButtonState(false);
+        } else {
+            CharSequence body = getCurrentText();
+            if (body != null && body.length() > 0) {
+                setListenButtonState(true);
+                tts.addListener(ttsListener);
+                tts.speak(body);
+            }
+        }
+    }
+
+    private final com.liskovsoft.smartyoutubetv2.common.utils.TtsManager.Listener ttsListener = new com.liskovsoft.smartyoutubetv2.common.utils.TtsManager.Listener() {
+        @Override public void onStart() { setListenButtonState(true); }
+        @Override public void onDone() { setListenButtonState(false); cleanupTtsListener(); }
+        @Override public void onError(String error) { setListenButtonState(false); cleanupTtsListener(); }
+        private void cleanupTtsListener() {
+            try { com.liskovsoft.smartyoutubetv2.common.utils.TtsManager.instance(activity).removeListener(this); } catch (Throwable ignored) {}
+        }
+    };
+
+    private void setListenButtonState(boolean speaking) {
+        if (listenBtn == null) return;
+        try {
+            listenBtn.setText(activity.getString(speaking ? com.liskovsoft.smartyoutubetv2.common.R.string.tts_stop : com.liskovsoft.smartyoutubetv2.common.R.string.tts_listen));
+        } catch (Throwable ignored) {}
     }
 
     private static boolean isDescendant(ViewGroup parent, View child) {

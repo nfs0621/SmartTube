@@ -23,6 +23,9 @@ public class GeminiData {
     private static final String KEY_COMMENTS_SUMMARY_ENABLED = "gemini_comments_summary_enabled";
     private static final String KEY_COMMENTS_MAX = "gemini_comments_max";
     private static final String KEY_COMMENTS_SOURCE = "gemini_comments_source"; // "top" (default), reserved for future
+    // TTS
+    private static final String KEY_TTS_SPEAK_ON_OPEN = "gemini_tts_speak_on_open";
+    private static final String KEY_TTS_RATE = "gemini_tts_rate"; // int (scaled by 100), default 170 for 1.7x
     @SuppressLint("StaticFieldLeak")
     private static GeminiData sInstance;
     private final AppPrefs mPrefs;
@@ -188,6 +191,29 @@ public class GeminiData {
 
     public void setCommentsSource(String source) {
         mPrefs.putString(KEY_COMMENTS_SOURCE, source);
+    }
+
+    // TTS
+    public boolean isTtsSpeakOnOpen() {
+        return mPrefs.getBoolean(KEY_TTS_SPEAK_ON_OPEN, false);
+    }
+
+    public void setTtsSpeakOnOpen(boolean enabled) {
+        mPrefs.putBoolean(KEY_TTS_SPEAK_ON_OPEN, enabled);
+    }
+
+    public float getTtsRate() {
+        int v = mPrefs.getInt(KEY_TTS_RATE, 170);
+        if (v < 80) v = 80;
+        if (v > 250) v = 250;
+        return v / 100f;
+    }
+
+    public void setTtsRate(float rate) {
+        if (rate < 0.8f) rate = 0.8f;
+        if (rate > 2.5f) rate = 2.5f;
+        int v = Math.round(rate * 100f);
+        mPrefs.putInt(KEY_TTS_RATE, v);
     }
 }
 
